@@ -48,6 +48,7 @@
 #include "recorded_battle.h"
 #include "regions.h"
 #include "rtc.h"
+#include "shiny_roll.h"
 #include "sound.h"
 #include "string_util.h"
 #include "strings.h"
@@ -880,18 +881,20 @@ bool32 ComputePlayerShinyOdds(u32 personality, u32 value)
     if (P_NO_SHINIES_WITHOUT_POKEBALLS && !HasAtLeastOnePokeBall() && FlagGet(FLAG_SYS_POKEDEX_GET))
         return FALSE;
 
-    u32 totalRerolls = 0;
+    struct ShinyRollSources sources = {0};
 
     if (CheckBagHasItem(ITEM_SHINY_CHARM, 1))
-        totalRerolls += I_SHINY_CHARM_ADDITIONAL_ROLLS;
+        sources.charm = I_SHINY_CHARM_ADDITIONAL_ROLLS;
 
     if (LURE_STEP_COUNT != 0)
-        totalRerolls += 1;
+        sources.lure = 1;
 
-    totalRerolls += CalculateChainFishingShinyRolls();
+    sources.fishing = CalculateChainFishingShinyRolls();
 
     if (gDexNavSpecies)
-        totalRerolls += CalculateDexNavShinyRolls();
+        sources.chain = ShinyVice_ChainBonus(gSaveBlock3Ptr->dexNavChain);
+
+    u32 totalRerolls = ShinyVice_ComputeExtraRolls(&sources);
 
     while (GET_SHINY_VALUE(value, personality) >= SHINY_ODDS && totalRerolls > 0)
     {

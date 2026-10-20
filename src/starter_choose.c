@@ -10,6 +10,7 @@
 #include "palette.h"
 #include "pokedex.h"
 #include "pokemon.h"
+#include "random.h"
 #include "scanline_effect.h"
 #include "sound.h"
 #include "sprite.h"
@@ -25,6 +26,11 @@
 #include "constants/rgb.h"
 
 #define STARTER_MON_COUNT   3
+
+// Shiny Vice: each starter's personality and shininess are rolled once when the
+// screen opens. The preview sprite and the Pokemon you are given both use these.
+EWRAM_DATA static u32 sStarterPersonality[STARTER_MON_COUNT] = {0};
+EWRAM_DATA static bool8 sStarterIsShiny[STARTER_MON_COUNT] = {FALSE};
 
 // Position of the sprite of the selected starter Pokémon
 #define STARTER_PKMN_POS_X (DISPLAY_WIDTH / 2)
@@ -44,7 +50,7 @@ static void Task_DeclineStarter(u8 taskId);
 static void Task_MoveStarterChooseCursor(u8 taskId);
 static void Task_CreateStarterLabel(u8 taskId);
 static void CreateStarterPokemonLabel(u8 selection);
-static u8 CreatePokemonFrontSprite(enum Species species, u8 x, u8 y);
+static u8 CreatePokemonFrontSprite(enum Species species, bool8 isShiny, u32 personality, u8 x, u8 y);
 static void SpriteCB_SelectionHand(struct Sprite *sprite);
 static void SpriteCB_Pokeball(struct Sprite *sprite);
 static void SpriteCB_StarterPokemon(struct Sprite *sprite);
@@ -370,11 +376,39 @@ static void VblankCB_StarterChoose(void)
 #define sTaskId data[0]
 #define sBallId data[1]
 
+static void RollStarterPreviews(void)
+{
+    u32 i;
+
+    for (i = 0; i < STARTER_MON_COUNT; i++)
+    {
+        sStarterPersonality[i] = Random32();
+        sStarterIsShiny[i] = ComputePlayerShinyOdds(sStarterPersonality[i], READ_OTID_FROM_SAVE);
+    }
+}
+
+// Creates the chosen starter from the values the preview showed.
+void GiveStarterPokemon(u16 chosenStarterId)
+{
+    struct Pokemon mon;
+    bool32 isShiny;
+
+    if (chosenStarterId >= STARTER_MON_COUNT)
+        chosenStarterId = 0;
+
+    isShiny = sStarterIsShiny[chosenStarterId];
+    CreateMonWithIVs(&mon, GetStarterPokemon(chosenStarterId), 5, sStarterPersonality[chosenStarterId], OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
+    GiveMonInitialMoveset(&mon);
+    SetMonData(&mon, MON_DATA_IS_SHINY, &isShiny);
+    GiveScriptedMonToPlayer(&mon, PARTY_SIZE);
+}
+
 void CB2_ChooseStarter(void)
 {
     u8 taskId;
     u8 spriteId;
 
+    RollStarterPreviews();
     SetVBlankCallback(NULL);
 
     SetGpuReg(REG_OFFSET_DISPCNT, 0);
@@ -495,7 +529,7 @@ static void Task_HandleStarterChooseInput(u8 taskId)
         gTasks[taskId].tCircleSpriteId = spriteId;
 
         // Create Pokémon sprite
-        spriteId = CreatePokemonFrontSprite(GetStarterPokemon(gTasks[taskId].tStarterSelection), sPokeballCoords[selection][0], sPokeballCoords[selection][1]);
+        spriteId = CreatePokemonFrontSprite(GetStarterPokemon(selection), sStarterIsShiny[selection], sStarterPersonality[selection], sPokeballCoords[selection][0], sPokeballCoords[selection][1]);
         gSprites[spriteId].affineAnims = &sAffineAnims_StarterPokemon;
         gSprites[spriteId].callback = SpriteCB_StarterPokemon;
 
@@ -625,11 +659,11 @@ static void Task_CreateStarterLabel(u8 taskId)
     gTasks[taskId].func = Task_HandleStarterChooseInput;
 }
 
-static u8 CreatePokemonFrontSprite(enum Species species, u8 x, u8 y)
+static u8 CreatePokemonFrontSprite(enum Species species, bool8 isShiny, u32 personality, u8 x, u8 y)
 {
     u8 spriteId;
 
-    spriteId = CreateMonPicSprite_Affine(species, FALSE, 0, MON_PIC_AFFINE_FRONT, x, y, 14, TAG_NONE);
+    spriteId = CreateMonPicSprite_Affine(species, isShiny, personality, MON_PIC_AFFINE_FRONT, x, y, 14, TAG_NONE);
     gSprites[spriteId].oam.priority = 0;
     return spriteId;
 }
