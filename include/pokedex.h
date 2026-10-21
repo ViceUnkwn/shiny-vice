@@ -8,6 +8,8 @@ extern void (*gPokedexVBlankCB)(void);
 
 void ResetPokedex(void);
 u16 GetNationalPokedexCount(u8 caseID);
+bool32 ShinyVice_IsDexNumInRoster(enum NationalDexOrder dexNum);
+u16 ShinyVice_GetRosterDexTotal(void);
 u32 GetRegionalPokedexCount(u8 caseID);
 u16 GetHoennPokedexCount(u8 caseID);
 u16 GetKantoPokedexCount(u8 caseID);

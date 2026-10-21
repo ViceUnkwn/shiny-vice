@@ -2057,6 +2057,33 @@ static void FreeWindowAndBgBuffers(void)
         Free(tilemapBuffer);
 }
 
+// Shiny Vice: species disabled via include/config/species_enabled.h have no data (zeroed gSpeciesInfo entry),
+// so the Pokedex hides them entirely instead of leaving blank "----------" rows. National numbers are kept.
+bool32 ShinyVice_IsDexNumInRoster(enum NationalDexOrder dexNum)
+{
+    enum Species species;
+
+    if (dexNum <= NATIONAL_DEX_NONE || dexNum > NATIONAL_DEX_COUNT)
+        return FALSE;
+    species = NationalPokedexNumToSpecies(dexNum);
+    if (species == SPECIES_NONE)
+        return FALSE;
+    return gSpeciesInfo[species].speciesName[0] != 0;
+}
+
+u16 ShinyVice_GetRosterDexTotal(void)
+{
+    u16 count = 0;
+    u32 i;
+
+    for (i = 1; i <= NATIONAL_DEX_COUNT; i++)
+    {
+        if (ShinyVice_IsDexNumInRoster(i))
+            count++;
+    }
+    return count;
+}
+
 bool32 ShouldSkipPokedexListEntry(enum NationalDexOrder dexNum)
 {
     if (P_SKIP_POKEDEX_GAPS == DONT_SKIP_GAPS)
@@ -2124,6 +2151,9 @@ void CreatePokedexList(u8 dexMode, u8 order)
                     r10 = 1;
             }
 
+            if (!ShinyVice_IsDexNumInRoster(temp_dexNum))
+                continue;
+
             if (ShouldSkipPokedexListEntry(temp_dexNum))
                 continue;
 
@@ -2143,7 +2173,7 @@ void CreatePokedexList(u8 dexMode, u8 order)
         {
             temp_dexNum = gPokedexOrder_Alphabetical[i];
 
-            if (temp_dexNum <= NATIONAL_DEX_COUNT && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN))
+            if (temp_dexNum <= NATIONAL_DEX_COUNT && ShinyVice_IsDexNumInRoster(temp_dexNum) && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
@@ -2157,7 +2187,7 @@ void CreatePokedexList(u8 dexMode, u8 order)
         {
             temp_dexNum = gPokedexOrder_Weight[i];
 
-            if (temp_dexNum <= NATIONAL_DEX_COUNT && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (temp_dexNum <= NATIONAL_DEX_COUNT && ShinyVice_IsDexNumInRoster(temp_dexNum) && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
@@ -2171,7 +2201,7 @@ void CreatePokedexList(u8 dexMode, u8 order)
         {
             temp_dexNum = gPokedexOrder_Weight[i];
 
-            if (temp_dexNum <= NATIONAL_DEX_COUNT && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (temp_dexNum <= NATIONAL_DEX_COUNT && ShinyVice_IsDexNumInRoster(temp_dexNum) && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
@@ -2185,7 +2215,7 @@ void CreatePokedexList(u8 dexMode, u8 order)
         {
             temp_dexNum = gPokedexOrder_Height[i];
 
-            if (temp_dexNum <= NATIONAL_DEX_COUNT && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (temp_dexNum <= NATIONAL_DEX_COUNT && ShinyVice_IsDexNumInRoster(temp_dexNum) && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
@@ -2199,7 +2229,7 @@ void CreatePokedexList(u8 dexMode, u8 order)
         {
             temp_dexNum = gPokedexOrder_Height[i];
 
-            if (temp_dexNum <= NATIONAL_DEX_COUNT && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (temp_dexNum <= NATIONAL_DEX_COUNT && ShinyVice_IsDexNumInRoster(temp_dexNum) && (!temp_isHoennDex || NationalToRegionalOrder(temp_dexNum) != 0) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
@@ -2720,6 +2750,22 @@ static u32 CreatePokedexMonSprite(u16 num, s16 x, s16 y)
 
 #define sIsDownArrow data[1]
 
+// Shiny Vice: how many Pokemon actually exist in this game, shown under the SEEN/OWN counters.
+static void ShinyVice_PrintRosterTotal(void)
+{
+    static const u8 color[3] = { TEXT_COLOR_TRANSPARENT, 1, 8 }; // white text, dark shadow (dex BG palette indexes)
+    static const u8 sText_Total[] = _("TOTAL {STR_VAR_1}");
+    u16 total;
+
+    if (IsNationalPokedexEnabled())
+        total = ShinyVice_GetRosterDexTotal();
+    else
+        total = HOENN_DEX_COUNT - 1;
+    ConvertIntToDecimalStringN(gStringVar1, total, STR_CONV_MODE_LEFT_ALIGN, 4);
+    StringExpandPlaceholders(gStringVar4, sText_Total);
+    AddTextPrinterParameterized4(0, FONT_NARROW, 4, 98, 0, 0, color, TEXT_SKIP_DRAW, gStringVar4);
+}
+
 static void CreateInterfaceSprites(u8 page)
 {
     u8 spriteId;
@@ -2761,6 +2807,8 @@ static void CreateInterfaceSprites(u8 page)
     if (page == PAGE_MAIN)
     {
         bool32 drawNextDigit;
+
+        ShinyVice_PrintRosterTotal();
 
         if (!IsNationalPokedexEnabled())
         {
@@ -4521,6 +4569,8 @@ u16 GetNationalPokedexCount(u8 caseID)
 
     for (i = 0; i < NATIONAL_DEX_COUNT; i++)
     {
+        if (!ShinyVice_IsDexNumInRoster(i + 1))
+            continue;
         switch (caseID)
         {
         case FLAG_GET_SEEN:
@@ -4627,6 +4677,8 @@ bool16 HasAllMons(void)
 
     for (i = 1; i < NATIONAL_DEX_COUNT + 1; i++)
     {
+        if (!ShinyVice_IsDexNumInRoster(i))
+            continue;
         j = NationalPokedexNumToSpecies(i);
         if (!(gSpeciesInfo[j].isMythical && !gSpeciesInfo[j].dexForceRequired) && !GetSetPokedexFlag(i, FLAG_GET_CAUGHT))
             return FALSE;
