@@ -4,23 +4,58 @@
 #include "battle_controllers.h"
 #include "battle_util.h"
 #include "main.h"
+#include "palette.h"
 #include "pokemon.h"
 #include "sprite.h"
 #include "task.h"
 #include "shiny_vice_fx.h"
+#include "shiny_vice_tint.h"
 
-#define TAG_SHINY_VICE_FX 40500
+// Each "owner" (battlers 0..3, plus the summary screen) gets its own palette slot, tagged
+// TAG_SHINY_VICE_FX + owner, so every Pokémon's twinkles can have their own colour.
+// The tile sheet is shared by all owners under TAG_SHINY_VICE_FX.
+#define TAG_SHINY_VICE_FX   40500
+#define FX_OWNER_BATTLER_0  0
+#define FX_OWNER_SUMMARY    4
+#define FX_MAX_BATTLER_OWNERS 4
 
-// Sheet layout (16x16 frames, 4 tiles each): 0 = star, 1..3 = twinkle small/medium/large.
-#define FX_TILES_PER_FRAME 4
+// Sheet layout (tile indices; see graphics/shiny_vice/shiny_fx.png, 16 px wide):
+//   star 8x8 | small 8x8 x3 | medium 16x16 x3 | large 16x16 x3
+#define FX_TILE_STAR     0
+#define FX_TILE_SMALL_0  1
+#define FX_TILE_SMALL_1  2
+#define FX_TILE_SMALL_2  3
+#define FX_TILE_MEDIUM_0 4
+#define FX_TILE_MEDIUM_1 8
+#define FX_TILE_MEDIUM_2 12
+#define FX_TILE_LARGE_0  16
+#define FX_TILE_LARGE_1  20
+#define FX_TILE_LARGE_2  24
 
+// Twinkle mix (percent). The remainder after small + medium is large.
+#define SPARKLE_CHANCE_SMALL     40
+#define SPARKLE_CHANCE_MEDIUM    35
+#define SPARKLE_CHANCE_COMPANION 30 // chance a medium/large twinkle brings a small one along
+#define SPARKLE_COMPANION_SPREAD 10 // companion lands within +/- this many pixels
+
+// Battle timing (frames)
 #define SPARKLE_BATTLE_FIRST_DELAY 150 // let the vanilla intro stars finish first
-#define SPARKLE_BATTLE_MIN_GAP     50
-#define SPARKLE_BATTLE_GAP_RANGE   70
+#define SPARKLE_BATTLE_MIN_GAP     30
+#define SPARKLE_BATTLE_GAP_RANGE   50
 #define SPARKLE_BATTLE_HALF_W      20
 #define SPARKLE_BATTLE_HALF_H      22
-#define SPARKLE_EMITTER_MIN_GAP    24
-#define SPARKLE_EMITTER_GAP_RANGE  36
+
+// Summary-screen emitter timing (frames)
+#define SPARKLE_EMITTER_MIN_GAP    18
+#define SPARKLE_EMITTER_GAP_RANGE  28
+
+enum
+{
+    FX_SPARKLE_SMALL,
+    FX_SPARKLE_MEDIUM,
+    FX_SPARKLE_LARGE,
+    FX_SPARKLE_COUNT,
+};
 
 static const u32 sFxGfx[] = INCGFX_U32("graphics/shiny_vice/shiny_fx.png", ".4bpp");
 static const u16 sFxPal[] = INCGFX_U16("graphics/shiny_vice/shiny_fx.png", ".gbapal");
@@ -32,13 +67,17 @@ static const struct SpriteSheet sFxSheet =
     .tag = TAG_SHINY_VICE_FX,
 };
 
-static const struct SpritePalette sFxPalette =
+static const struct OamData sOamData_Fx8 =
 {
-    .data = sFxPal,
-    .tag = TAG_SHINY_VICE_FX,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(8x8),
+    .size = SPRITE_SIZE(8x8),
+    .priority = 1,
 };
 
-static const struct OamData sOamData_Fx =
+static const struct OamData sOamData_Fx16 =
 {
     .affineMode = ST_OAM_AFFINE_OFF,
     .objMode = ST_OAM_OBJ_NORMAL,
@@ -50,7 +89,7 @@ static const struct OamData sOamData_Fx =
 
 static const union AnimCmd sAnim_Star[] =
 {
-    ANIMCMD_FRAME(0, 0),
+    ANIMCMD_FRAME(FX_TILE_STAR, 0),
     ANIMCMD_END,
 };
 
@@ -59,44 +98,98 @@ static const union AnimCmd *const sAnimTable_Star[] =
     sAnim_Star,
 };
 
-static const union AnimCmd sAnim_Twinkle[] =
+// Twinkle animations: grow, flash, flicker once more at the peak, shrink away.
+static const union AnimCmd sAnim_Small[] =
 {
-    ANIMCMD_FRAME(1 * FX_TILES_PER_FRAME, 3),
-    ANIMCMD_FRAME(2 * FX_TILES_PER_FRAME, 3),
-    ANIMCMD_FRAME(3 * FX_TILES_PER_FRAME, 4),
-    ANIMCMD_FRAME(2 * FX_TILES_PER_FRAME, 3),
-    ANIMCMD_FRAME(1 * FX_TILES_PER_FRAME, 3),
+    ANIMCMD_FRAME(FX_TILE_SMALL_0, 2),
+    ANIMCMD_FRAME(FX_TILE_SMALL_1, 3),
+    ANIMCMD_FRAME(FX_TILE_SMALL_2, 6),
+    ANIMCMD_FRAME(FX_TILE_SMALL_1, 3),
+    ANIMCMD_FRAME(FX_TILE_SMALL_0, 2),
     ANIMCMD_END,
 };
 
-static const union AnimCmd *const sAnimTable_Twinkle[] =
+static const union AnimCmd sAnim_Medium[] =
 {
-    sAnim_Twinkle,
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_0, 3),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_1, 3),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_2, 5),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_1, 2),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_2, 4),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_1, 3),
+    ANIMCMD_FRAME(FX_TILE_MEDIUM_0, 3),
+    ANIMCMD_END,
 };
+
+static const union AnimCmd sAnim_Large[] =
+{
+    ANIMCMD_FRAME(FX_TILE_LARGE_0, 3),
+    ANIMCMD_FRAME(FX_TILE_LARGE_1, 3),
+    ANIMCMD_FRAME(FX_TILE_LARGE_2, 6),
+    ANIMCMD_FRAME(FX_TILE_LARGE_1, 2),
+    ANIMCMD_FRAME(FX_TILE_LARGE_2, 5),
+    ANIMCMD_FRAME(FX_TILE_LARGE_1, 3),
+    ANIMCMD_FRAME(FX_TILE_LARGE_0, 3),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd *const sAnimTable_Small[] = { sAnim_Small };
+static const union AnimCmd *const sAnimTable_Medium[] = { sAnim_Medium };
+static const union AnimCmd *const sAnimTable_Large[] = { sAnim_Large };
 
 static void SpriteCB_Twinkle(struct Sprite *sprite);
 static void SpriteCB_EmitterStar(struct Sprite *sprite);
 
-static const struct SpriteTemplate sSpriteTemplate_Twinkle =
+// paletteTag is TAG_NONE on purpose: the palette slot is picked per owner at spawn time.
+static const struct SpriteTemplate sSpriteTemplate_Star =
 {
     .tileTag = TAG_SHINY_VICE_FX,
-    .paletteTag = TAG_SHINY_VICE_FX,
-    .oam = &sOamData_Fx,
-    .anims = sAnimTable_Twinkle,
+    .paletteTag = TAG_NONE,
+    .oam = &sOamData_Fx8,
+    .anims = sAnimTable_Star,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_EmitterStar,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_Small =
+{
+    .tileTag = TAG_SHINY_VICE_FX,
+    .paletteTag = TAG_NONE,
+    .oam = &sOamData_Fx8,
+    .anims = sAnimTable_Small,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
     .callback = SpriteCB_Twinkle,
 };
 
-static const struct SpriteTemplate sSpriteTemplate_Star =
+static const struct SpriteTemplate sSpriteTemplate_Medium =
 {
     .tileTag = TAG_SHINY_VICE_FX,
-    .paletteTag = TAG_SHINY_VICE_FX,
-    .oam = &sOamData_Fx,
-    .anims = sAnimTable_Star,
+    .paletteTag = TAG_NONE,
+    .oam = &sOamData_Fx16,
+    .anims = sAnimTable_Medium,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCB_EmitterStar,
+    .callback = SpriteCB_Twinkle,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_Large =
+{
+    .tileTag = TAG_SHINY_VICE_FX,
+    .paletteTag = TAG_NONE,
+    .oam = &sOamData_Fx16,
+    .anims = sAnimTable_Large,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_Twinkle,
+};
+
+static const struct SpriteTemplate *const sSparkleTemplates[FX_SPARKLE_COUNT] =
+{
+    [FX_SPARKLE_SMALL] = &sSpriteTemplate_Small,
+    [FX_SPARKLE_MEDIUM] = &sSpriteTemplate_Medium,
+    [FX_SPARKLE_LARGE] = &sSpriteTemplate_Large,
 };
 
 // Private LCG: visual randomness must never touch Random()/gRngValue.
@@ -110,19 +203,42 @@ static u32 FxRandom(u32 range)
     return ((sFxRng >> 16) & 0x7FFF) % range;
 }
 
-static bool32 LoadFxGfx(void)
+static bool32 LoadFxSheet(void)
 {
     if (GetSpriteTileStartByTag(TAG_SHINY_VICE_FX) == 0xFFFF)
     {
         if (LoadSpriteSheet(&sFxSheet) == 0xFFFF)
             return FALSE;
     }
-    if (IndexOfSpritePaletteTag(TAG_SHINY_VICE_FX) == 0xFF)
-    {
-        if (LoadSpritePalette(&sFxPalette) == 0xFF)
-            return FALSE;
-    }
     return TRUE;
+}
+
+// Colour source: the palette currently loaded for a sprite (the Pokémon's own, shiny, palette).
+static u16 TintFromSpritePalette(u32 spriteId)
+{
+    if (spriteId >= MAX_SPRITES || !gSprites[spriteId].inUse)
+        return SVT_DEFAULT_TINT;
+    return ShinyViceTint_Pick(&gPlttBufferUnfaded[OBJ_PLTT_ID(gSprites[spriteId].oam.paletteNum)]);
+}
+
+// Builds the tinted palette for an owner and loads it (allocating a slot the first time,
+// overwriting in place afterwards). Returns the OBJ palette slot, or 0xFF if none is free.
+static u8 LoadOwnerPalette(u8 owner, u16 tint)
+{
+    u16 pal[16];
+    u16 tag = TAG_SHINY_VICE_FX + owner;
+    u8 slot = IndexOfSpritePaletteTag(tag);
+
+    CpuCopy16(sFxPal, pal, sizeof(pal));
+    ShinyViceTint_Apply(pal, tint);
+    if (slot == 0xFF)
+    {
+        struct SpritePalette spritePal = { .data = pal, .tag = tag };
+
+        return LoadSpritePalette(&spritePal); // copies the data, so a stack buffer is fine
+    }
+    LoadPalette(pal, OBJ_PLTT_ID(slot), PLTT_SIZE_4BPP);
+    return slot;
 }
 
 static void SpriteCB_Twinkle(struct Sprite *sprite)
@@ -131,26 +247,65 @@ static void SpriteCB_Twinkle(struct Sprite *sprite)
         DestroySprite(sprite);
 }
 
-void ShinyViceFx_SpawnSparkle(s16 x, s16 y, u8 oamPriority, u8 subpriority)
+static void SpawnTwinkle(s16 x, s16 y, u8 oamPriority, u8 owner, u32 size)
 {
     u8 spriteId;
+    u8 slot = IndexOfSpritePaletteTag(TAG_SHINY_VICE_FX + owner);
 
-    if (!LoadFxGfx())
+    if (slot == 0xFF)
         return;
-    spriteId = CreateSprite(&sSpriteTemplate_Twinkle, x, y, subpriority);
-    if (spriteId != MAX_SPRITES)
-        gSprites[spriteId].oam.priority = oamPriority;
+    spriteId = CreateSprite(sSparkleTemplates[size], x, y, 0);
+    if (spriteId == MAX_SPRITES)
+        return;
+    gSprites[spriteId].oam.priority = oamPriority;
+    gSprites[spriteId].oam.paletteNum = slot;
+}
+
+static u32 PickSparkleSize(void)
+{
+    u32 roll = FxRandom(100);
+
+    if (roll < SPARKLE_CHANCE_SMALL)
+        return FX_SPARKLE_SMALL;
+    if (roll < SPARKLE_CHANCE_SMALL + SPARKLE_CHANCE_MEDIUM)
+        return FX_SPARKLE_MEDIUM;
+    return FX_SPARKLE_LARGE;
+}
+
+// One twinkle at a random point in the box, sometimes with a small companion beside it.
+static void EmitTwinkles(s16 centerX, s16 centerY, u8 halfW, u8 halfH, u8 oamPriority, u8 owner)
+{
+    u32 size = PickSparkleSize();
+    s16 x = centerX - halfW + (s32)FxRandom(halfW * 2 + 1);
+    s16 y = centerY - halfH + (s32)FxRandom(halfH * 2 + 1);
+
+    if (!LoadFxSheet())
+        return;
+    SpawnTwinkle(x, y, oamPriority, owner, size);
+    if (size != FX_SPARKLE_SMALL && FxRandom(100) < SPARKLE_CHANCE_COMPANION)
+    {
+        s16 companionX = x + (s32)FxRandom(SPARKLE_COMPANION_SPREAD * 2 + 1) - SPARKLE_COMPANION_SPREAD;
+        s16 companionY = y + (s32)FxRandom(SPARKLE_COMPANION_SPREAD * 2 + 1) - SPARKLE_COMPANION_SPREAD;
+
+        SpawnTwinkle(companionX, companionY, oamPriority, owner, FX_SPARKLE_SMALL);
+    }
 }
 
 // Emitter star sprite data
-#define sTimer   data[0]
-#define sAreaX   data[1]
-#define sAreaY   data[2]
-#define sHalfW   data[3]
-#define sHalfH   data[4]
+#define sTimer      data[0]
+#define sAreaX      data[1]
+#define sAreaY      data[2]
+#define sHalfW      data[3]
+#define sHalfH      data[4]
+#define sTint       data[5] // tint the owner palette currently holds (0 = none yet)
+#define sTintPtrLo  data[6] // const u8 * to the sprite id whose palette supplies the tint
+#define sTintPtrHi  data[7]
 
 static void SpriteCB_EmitterStar(struct Sprite *sprite)
 {
+    const u8 *tintSpriteIdPtr;
+    u16 tint;
+
     if (sprite->invisible)
         return;
     if (sprite->sTimer > 0)
@@ -159,27 +314,45 @@ static void SpriteCB_EmitterStar(struct Sprite *sprite)
         return;
     }
     sprite->sTimer = SPARKLE_EMITTER_MIN_GAP + FxRandom(SPARKLE_EMITTER_GAP_RANGE);
-    ShinyViceFx_SpawnSparkle(sprite->sAreaX - sprite->sHalfW + (s32)FxRandom(sprite->sHalfW * 2 + 1),
-                             sprite->sAreaY - sprite->sHalfH + (s32)FxRandom(sprite->sHalfH * 2 + 1),
-                             sprite->oam.priority,
-                             0);
+
+    tintSpriteIdPtr = (const u8 *)(((u32)(u16)sprite->sTintPtrHi << 16) | (u16)sprite->sTintPtrLo);
+    tint = (tintSpriteIdPtr != NULL) ? TintFromSpritePalette(*tintSpriteIdPtr) : SVT_DEFAULT_TINT;
+    if (tint != (u16)sprite->sTint)
+    {
+        if (LoadOwnerPalette(FX_OWNER_SUMMARY, tint) == 0xFF)
+            return;
+        sprite->sTint = tint;
+    }
+    EmitTwinkles(sprite->sAreaX, sprite->sAreaY, sprite->sHalfW, sprite->sHalfH,
+                 sprite->oam.priority, FX_OWNER_SUMMARY);
 }
 
-u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u8 halfH, u8 oamPriority)
+u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u8 halfH,
+                                 u8 oamPriority, const u8 *monSpriteIdPtr)
 {
     u8 spriteId;
+    u8 slot;
+    u16 tint;
 
-    if (!LoadFxGfx())
+    if (!LoadFxSheet())
+        return SPRITE_NONE;
+    tint = (monSpriteIdPtr != NULL) ? TintFromSpritePalette(*monSpriteIdPtr) : SVT_DEFAULT_TINT;
+    slot = LoadOwnerPalette(FX_OWNER_SUMMARY, tint);
+    if (slot == 0xFF)
         return SPRITE_NONE;
     spriteId = CreateSprite(&sSpriteTemplate_Star, x, y, 0);
     if (spriteId == MAX_SPRITES)
         return SPRITE_NONE;
     gSprites[spriteId].oam.priority = oamPriority;
+    gSprites[spriteId].oam.paletteNum = slot;
     gSprites[spriteId].sTimer = SPARKLE_EMITTER_MIN_GAP;
     gSprites[spriteId].sAreaX = areaX;
     gSprites[spriteId].sAreaY = areaY;
     gSprites[spriteId].sHalfW = halfW;
     gSprites[spriteId].sHalfH = halfH;
+    gSprites[spriteId].sTint = tint;
+    gSprites[spriteId].sTintPtrLo = (u32)monSpriteIdPtr & 0xFFFF;
+    gSprites[spriteId].sTintPtrHi = (u32)monSpriteIdPtr >> 16;
     return spriteId;
 }
 
@@ -188,10 +361,14 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
 #undef sAreaY
 #undef sHalfW
 #undef sHalfH
+#undef sTint
+#undef sTintPtrLo
+#undef sTintPtrHi
 
 // Battle sparkle task data
 #define tBattler data[0]
 #define tTimer   data[1]
+#define tTint    data[2] // tint the owner palette currently holds (0 = none yet)
 
 static void Task_BattleSparkle(u8 taskId)
 {
@@ -200,10 +377,11 @@ static void Task_BattleSparkle(u8 taskId)
     struct Pokemon *mon;
     struct Pokemon *illusionMon;
     struct Sprite *monSprite;
-    s16 x, y;
+    u16 tint;
 
     if (!gMain.inBattle || gBattleSpritesDataPtr == NULL || battler >= gBattlersCount)
     {
+        FreeSpritePaletteByTag(TAG_SHINY_VICE_FX + FX_OWNER_BATTLER_0 + battler);
         DestroyTask(taskId);
         return;
     }
@@ -226,9 +404,21 @@ static void Task_BattleSparkle(u8 taskId)
         return;
 
     monSprite = &gSprites[gBattlerSpriteIds[battler]];
-    x = GetBattlerSpriteCoord(battler, BATTLER_COORD_X) - SPARKLE_BATTLE_HALF_W + (s32)FxRandom(SPARKLE_BATTLE_HALF_W * 2 + 1);
-    y = GetBattlerSpriteCoord(battler, BATTLER_COORD_Y) - SPARKLE_BATTLE_HALF_H + (s32)FxRandom(SPARKLE_BATTLE_HALF_H * 2 + 1);
-    ShinyViceFx_SpawnSparkle(x, y, monSprite->oam.priority, 0);
+
+    // Follow whatever palette the battler sprite is wearing right now (switch-ins,
+    // Transform and Illusion all change it), reloading our palette only when it changes.
+    tint = TintFromSpritePalette(gBattlerSpriteIds[battler]);
+    if (tint != (u16)tTint)
+    {
+        if (LoadOwnerPalette(FX_OWNER_BATTLER_0 + battler, tint) == 0xFF)
+            return;
+        tTint = tint;
+    }
+
+    EmitTwinkles(GetBattlerSpriteCoord(battler, BATTLER_COORD_X),
+                 GetBattlerSpriteCoord(battler, BATTLER_COORD_Y),
+                 SPARKLE_BATTLE_HALF_W, SPARKLE_BATTLE_HALF_H,
+                 monSprite->oam.priority, FX_OWNER_BATTLER_0 + battler);
 }
 
 void ShinyViceFx_StartBattleSparkle(u32 battler)
@@ -236,6 +426,8 @@ void ShinyViceFx_StartBattleSparkle(u32 battler)
     u32 i;
     u8 taskId;
 
+    if (battler >= FX_MAX_BATTLER_OWNERS)
+        return;
     for (i = 0; i < NUM_TASKS; i++)
     {
         if (gTasks[i].isActive && gTasks[i].func == Task_BattleSparkle && gTasks[i].data[0] == battler)
@@ -244,7 +436,9 @@ void ShinyViceFx_StartBattleSparkle(u32 battler)
     taskId = CreateTask(Task_BattleSparkle, 20);
     gTasks[taskId].tBattler = battler;
     gTasks[taskId].tTimer = SPARKLE_BATTLE_FIRST_DELAY;
+    gTasks[taskId].tTint = 0;
 }
 
 #undef tBattler
 #undef tTimer
+#undef tTint

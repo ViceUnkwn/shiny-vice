@@ -4656,12 +4656,14 @@ static void CreateSetStatusSprite(void)
     }
 }
 
-// Shiny star icon in the portrait's top-right corner. Also emits twinkles over the portrait.
-#define SHINY_STAR_X        64
-#define SHINY_STAR_Y        40
+// Shiny star icon: an 8x8 sprite tucked into the portrait frame's top-right corner, sized to sit
+// with the gender/ball icons. It also emits tinted twinkles over the portrait. X/Y are the star's
+// centre; the portrait frame spans x 8..72, y 32..96.
+#define SHINY_STAR_X        67
+#define SHINY_STAR_Y        37
 #define SHINY_PORTRAIT_X    40
 #define SHINY_PORTRAIT_Y    64
-#define SHINY_PORTRAIT_HALF 26
+#define SHINY_PORTRAIT_HALF 24
 
 static void CreateOrUpdateShinyStarSprite(void)
 {
@@ -4673,9 +4675,12 @@ static void CreateOrUpdateShinyStarSprite(void)
     {
         if (!show)
             return;
+        // The emitter re-reads the mon sprite id through this pointer, so twinkle colour
+        // follows the Pokémon when the player pages through the party/box.
         *spriteId = ShinyViceFx_CreateEmitterStar(SHINY_STAR_X, SHINY_STAR_Y,
                                                   SHINY_PORTRAIT_X, SHINY_PORTRAIT_Y,
-                                                  SHINY_PORTRAIT_HALF, SHINY_PORTRAIT_HALF, 0);
+                                                  SHINY_PORTRAIT_HALF, SHINY_PORTRAIT_HALF, 0,
+                                                  &sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_MON]);
         if (*spriteId == SPRITE_NONE)
             return;
     }
