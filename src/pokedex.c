@@ -677,30 +677,6 @@ const struct WindowTemplate sPokemonList_WindowTemplate[] =
     DUMMY_WIN_TEMPLATE
 };
 
-// Shiny Vice: same as above plus a window for the TOTAL count in the left panel (BG1 does not scroll).
-static const struct WindowTemplate sShinyVicePokemonList_WindowTemplate[] =
-{
-    {
-        .bg = 2,
-        .tilemapLeft = 0,
-        .tilemapTop = 0,
-        .width = 32,
-        .height = 32,
-        .paletteNum = 0,
-        .baseBlock = 1,
-    },
-    {
-        .bg = 1,
-        .tilemapLeft = 0,
-        .tilemapTop = 12,
-        .width = 12,
-        .height = 2,
-        .paletteNum = 0,
-        .baseBlock = 300,
-    },
-    DUMMY_WIN_TEMPLATE
-};
-
 static const u8 sText_No0000[] = _("{NO}0000");
 static const u8 sText_No000[] = _("{NO}000");
 const u8 sCaughtBall_Gfx[] = INCGFX_U8("graphics/pokedex/caught_ball.png", ".4bpp");
@@ -1985,15 +1961,10 @@ static bool8 LoadPokedexListPage(u8 page)
         else
             sPokedexView->isSearchResults = TRUE;
         LoadPokedexBgPalette(sPokedexView->isSearchResults);
-        InitWindows(sShinyVicePokemonList_WindowTemplate);
+        InitWindows(sPokemonList_WindowTemplate);
         DeactivateAllTextPrinters();
         PutWindowTilemap(0);
         CopyWindowToVram(0, COPYWIN_FULL);
-        if (page == PAGE_MAIN)
-        {
-            FillWindowPixelBuffer(1, PIXEL_FILL(0));
-            PutWindowTilemap(1);
-        }
         gMain.state = 1;
         break;
     case 1:
@@ -2114,19 +2085,6 @@ bool32 ShinyVice_IsDexNumInRoster(enum NationalDexOrder dexNum)
     if (!sShinyViceRosterBitmapReady)
         ShinyVice_BuildRosterBitmap();
     return (sShinyViceRosterBitmap[dexNum / 8] >> (dexNum % 8)) & 1;
-}
-
-u16 ShinyVice_GetRosterDexTotal(void)
-{
-    u16 count = 0;
-    u32 i;
-
-    for (i = 1; i <= NATIONAL_DEX_COUNT; i++)
-    {
-        if (ShinyVice_IsDexNumInRoster(i))
-            count++;
-    }
-    return count;
 }
 
 bool32 ShouldSkipPokedexListEntry(enum NationalDexOrder dexNum)
@@ -2795,23 +2753,6 @@ static u32 CreatePokedexMonSprite(u16 num, s16 x, s16 y)
 
 #define sIsDownArrow data[1]
 
-// Shiny Vice: how many Pokemon actually exist in this game, shown under the SEEN/OWN counters.
-static void ShinyVice_PrintRosterTotal(void)
-{
-    static const u8 color[3] = { TEXT_COLOR_TRANSPARENT, 1, 8 }; // white text, dark shadow (dex BG palette indexes)
-    static const u8 sText_Total[] = _("TOTAL {STR_VAR_1}");
-    u16 total;
-
-    if (IsNationalPokedexEnabled())
-        total = ShinyVice_GetRosterDexTotal();
-    else
-        total = HOENN_DEX_COUNT - 1;
-    ConvertIntToDecimalStringN(gStringVar1, total, STR_CONV_MODE_LEFT_ALIGN, 4);
-    StringExpandPlaceholders(gStringVar4, sText_Total);
-    AddTextPrinterParameterized4(1, FONT_NARROW, 4, 1, 0, 0, color, TEXT_SKIP_DRAW, gStringVar4);
-    CopyWindowToVram(1, COPYWIN_FULL);
-}
-
 static void CreateInterfaceSprites(u8 page)
 {
     u8 spriteId;
@@ -2853,8 +2794,6 @@ static void CreateInterfaceSprites(u8 page)
     if (page == PAGE_MAIN)
     {
         bool32 drawNextDigit;
-
-        ShinyVice_PrintRosterTotal();
 
         if (!IsNationalPokedexEnabled())
         {
