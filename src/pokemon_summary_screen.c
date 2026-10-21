@@ -4656,11 +4656,11 @@ static void CreateSetStatusSprite(void)
     }
 }
 
-// Shiny star icon: the supplied 20x22 star artwork, drawn 1:1 (in a 32x32 sprite frame) in the portrait frame's top-right
+// Shiny star icon: an 11x12 star (the supplied artwork, reduced; in a 16x16 sprite frame) in the portrait frame's top-right
 // corner, large enough to read at a glance next to the gender/ball icons. It also emits tinted
 // twinkles over the portrait. X/Y are the star's centre; the portrait frame spans x 8..72, y 32..96.
-#define SHINY_STAR_X        60
-#define SHINY_STAR_Y        44
+#define SHINY_STAR_X        64
+#define SHINY_STAR_Y        39
 #define SHINY_PORTRAIT_X    40
 #define SHINY_PORTRAIT_Y    64
 #define SHINY_PORTRAIT_HALF 24

@@ -12,7 +12,7 @@ Palette contract (must match include/shiny_vice_tint.h):
     6..10    gold star icon (never tinted): outline, gold, light, highlight, shade
 
 Sheet layout (16 px wide = 2 tiles per row; tile = (y / 8) * 2 + (x / 8)):
-    tiles  0-3    unused (the star lives in shiny_star.png, a 32x32 sheet of its own)
+    tiles  0-3    unused (the star lives in shiny_star.png, a 16x16 sheet of its own)
     tiles  4-6    small twinkle, 8x8 frames x3 (tile 7 unused)
     tiles  8..    medium twinkle, 16x16 frames x3   (8, 12, 16)
     tiles 20..    large twinkle,  16x16 frames x3   (20, 24, 28)
@@ -72,38 +72,42 @@ def twinkle(arm, wide=0, burst=0):
     return out
 
 
-STAR_SRC = "graphics/shiny_vice/star_source.png"   # the supplied artwork (13 frames, 32x32)
+# Summary-screen star: the supplied artwork (graphics/shiny_vice/star_source.png, 20x22) hand-reduced
+# to 11x12 - it has to sit in the corner of the 64 px portrait without covering the Pokemon. A
+# resample loses the points, so the reduction is drawn by hand: O outline, Y gold, B orange shade,
+# W white rim, L pale glint. Written to shiny_star.png (16x16 frame, shares the fx palette 6..10).
 STAR_OUT = "graphics/shiny_vice/shiny_star.png"
-STAR_FRAME = 4                                       # clean, sparkle-free frame
+STAR_ART = [
+    ".....O.....",
+    "....OYO....",
+    "...OYYYO...",
+    "OOOOYYYOOOO",
+    "OYYYYYYYYYO",
+    "OWYYYYYYYWO",
+    ".OBWYYYWBO.",
+    "..OBYYYBO..",
+    ".OYYYWYYYO.",
+    ".OWBBBBBWO.",
+    ".OBBOOOBBO.",
+    ".OOO...OOO.",
+]
+STAR_KEY = {"O": S_OUT, "Y": S_GOLD, "B": S_SHADE, "W": S_WHITE_STAR, "L": S_LIGHT}
 
 
 def build_star():
-    """Writes the supplied star artwork 1:1 (no resampling) as a 32x32 4bpp sheet that shares the
-    fx palette (indices 6..10), so the sprite can use the owner's palette slot."""
-    src = Image.open(STAR_SRC).convert("RGBA")
-    frame = src.crop((STAR_FRAME * 32, 0, STAR_FRAME * 32 + 32, 32))
-    box = frame.getbbox()
-    art = frame.crop(box)
-    key = {(66, 37, 47): S_OUT, (240, 221, 17): S_GOLD, (240, 237, 103): S_LIGHT,
-           (255, 255, 255): S_WHITE_STAR, (199, 105, 4): S_SHADE}
-    out = Image.new("P", (32, 32), 0)
+    out = Image.new("P", (16, 16), 0)
     flat = []
     for i in range(256):
         flat.extend(PALETTE.get(i, (0, 0, 0)))
     out.putpalette(flat)
-    px, ap = out.load(), art.load()
-    ox, oy = (32 - art.width) // 2, (32 - art.height) // 2
-    for y in range(art.height):
-        for x in range(art.width):
-            r, g, b, a = ap[x, y]
-            if a < 128:
-                continue
-            c = (r, g, b)
-            if c not in key:
-                c = min(key, key=lambda k: sum((u - v) ** 2 for u, v in zip(k, c)))
-            px[ox + x, oy + y] = key[c]
+    px = out.load()
+    for y, row in enumerate(STAR_ART):
+        assert len(row) == 11, (y, row)
+        for x, c in enumerate(row):
+            if c != ".":
+                px[x + 3, y + 2] = STAR_KEY[c]
     out.save(STAR_OUT, transparency=0)
-    print(f"wrote {STAR_OUT} ({art.width}x{art.height} art, 1:1)")
+    print(f"wrote {STAR_OUT} (11x12 art in a 16x16 frame)")
 
 
 FRAMES = [
