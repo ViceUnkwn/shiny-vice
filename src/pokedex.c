@@ -677,6 +677,30 @@ const struct WindowTemplate sPokemonList_WindowTemplate[] =
     DUMMY_WIN_TEMPLATE
 };
 
+// Shiny Vice: same as above plus a window for the TOTAL count in the left panel (BG1 does not scroll).
+static const struct WindowTemplate sShinyVicePokemonList_WindowTemplate[] =
+{
+    {
+        .bg = 2,
+        .tilemapLeft = 0,
+        .tilemapTop = 0,
+        .width = 32,
+        .height = 32,
+        .paletteNum = 0,
+        .baseBlock = 1,
+    },
+    {
+        .bg = 1,
+        .tilemapLeft = 0,
+        .tilemapTop = 12,
+        .width = 12,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 300,
+    },
+    DUMMY_WIN_TEMPLATE
+};
+
 static const u8 sText_No0000[] = _("{NO}0000");
 static const u8 sText_No000[] = _("{NO}000");
 const u8 sCaughtBall_Gfx[] = INCGFX_U8("graphics/pokedex/caught_ball.png", ".4bpp");
@@ -1961,10 +1985,15 @@ static bool8 LoadPokedexListPage(u8 page)
         else
             sPokedexView->isSearchResults = TRUE;
         LoadPokedexBgPalette(sPokedexView->isSearchResults);
-        InitWindows(sPokemonList_WindowTemplate);
+        InitWindows(sShinyVicePokemonList_WindowTemplate);
         DeactivateAllTextPrinters();
         PutWindowTilemap(0);
         CopyWindowToVram(0, COPYWIN_FULL);
+        if (page == PAGE_MAIN)
+        {
+            FillWindowPixelBuffer(1, PIXEL_FILL(0));
+            PutWindowTilemap(1);
+        }
         gMain.state = 1;
         break;
     case 1:
@@ -2057,18 +2086,34 @@ static void FreeWindowAndBgBuffers(void)
         Free(tilemapBuffer);
 }
 
-// Shiny Vice: species disabled via include/config/species_enabled.h have no data (zeroed gSpeciesInfo entry),
-// so the Pokedex hides them entirely instead of leaving blank "----------" rows. National numbers are kept.
+// Shiny Vice: species disabled via include/config/species_enabled.h have no data (zeroed gSpeciesInfo entry,
+// natDexNum == 0), so the Pokedex hides them entirely instead of leaving blank "----------" rows.
+// National numbers are kept. A bitmap is built once from gSpeciesInfo because looking each number up with
+// NationalPokedexNumToSpecies() scans the whole species table every time (far too slow on GBA).
+EWRAM_DATA static u8 sShinyViceRosterBitmap[(NATIONAL_DEX_COUNT / 8) + 1] = {0};
+EWRAM_DATA static bool8 sShinyViceRosterBitmapReady = FALSE;
+
+static void ShinyVice_BuildRosterBitmap(void)
+{
+    u32 species;
+    u32 num;
+
+    for (species = 1; species < NUM_SPECIES; species++)
+    {
+        num = gSpeciesInfo[species].natDexNum;
+        if (num > 0 && num <= NATIONAL_DEX_COUNT)
+            sShinyViceRosterBitmap[num / 8] |= 1 << (num % 8);
+    }
+    sShinyViceRosterBitmapReady = TRUE;
+}
+
 bool32 ShinyVice_IsDexNumInRoster(enum NationalDexOrder dexNum)
 {
-    enum Species species;
-
     if (dexNum <= NATIONAL_DEX_NONE || dexNum > NATIONAL_DEX_COUNT)
         return FALSE;
-    species = NationalPokedexNumToSpecies(dexNum);
-    if (species == SPECIES_NONE)
-        return FALSE;
-    return gSpeciesInfo[species].speciesName[0] != 0;
+    if (!sShinyViceRosterBitmapReady)
+        ShinyVice_BuildRosterBitmap();
+    return (sShinyViceRosterBitmap[dexNum / 8] >> (dexNum % 8)) & 1;
 }
 
 u16 ShinyVice_GetRosterDexTotal(void)
@@ -2763,7 +2808,8 @@ static void ShinyVice_PrintRosterTotal(void)
         total = HOENN_DEX_COUNT - 1;
     ConvertIntToDecimalStringN(gStringVar1, total, STR_CONV_MODE_LEFT_ALIGN, 4);
     StringExpandPlaceholders(gStringVar4, sText_Total);
-    AddTextPrinterParameterized4(0, FONT_NARROW, 4, 98, 0, 0, color, TEXT_SKIP_DRAW, gStringVar4);
+    AddTextPrinterParameterized4(1, FONT_NARROW, 4, 1, 0, 0, color, TEXT_SKIP_DRAW, gStringVar4);
+    CopyWindowToVram(1, COPYWIN_FULL);
 }
 
 static void CreateInterfaceSprites(u8 page)
