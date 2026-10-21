@@ -7,9 +7,10 @@
 //
 // Palette contract with graphics/shiny_vice/shiny_fx.png:
 //   index 0      transparent
-//   index 1..4   tintable ramp: outline, mid, base, light
+//   index 1..4   tintable ramp: drop shadow, tip, base, light
 //   index 5      white core (never tinted)
 //   index 6..10  gold star icon (never tinted)
+// (dev_scripts/gen_shiny_fx.py generates the sheet that follows this contract)
 
 #define SVT_R(c)        ((c) & 0x1F)
 #define SVT_G(c)        (((c) >> 5) & 0x1F)

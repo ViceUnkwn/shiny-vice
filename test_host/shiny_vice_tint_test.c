@@ -60,12 +60,12 @@ int main(void)
         int i;
         for (i = 0; i < 16; i++) out[i] = SVT_RGB(31, 31, 31);
         ShinyViceTint_Apply(out, t);
-        CHECK(SVT_B(out[1]) < SVT_B(out[2]), "outline darker than mid");
-        CHECK(SVT_B(out[2]) < SVT_B(out[3]), "mid darker than base");
+        CHECK(SVT_B(out[1]) < SVT_B(out[2]), "shadow darker than tip");
+        CHECK(SVT_B(out[2]) < SVT_B(out[3]), "tip darker than base");
         CHECK(out[3] == t, "base is the tint");
         CHECK(SVT_R(out[4]) > SVT_R(t), "light lifts red toward white");
         CHECK(out[5] == SVT_RGB(31, 31, 31) && out[6] == SVT_RGB(31, 31, 31), "indices 5+ untouched");
-        printf("blue ramp: outline %u,%u,%u mid %u,%u,%u base %u,%u,%u light %u,%u,%u\n",
+        printf("blue ramp: shadow %u,%u,%u tip %u,%u,%u base %u,%u,%u light %u,%u,%u\n",
                SVT_R(out[1]), SVT_G(out[1]), SVT_B(out[1]), SVT_R(out[2]), SVT_G(out[2]), SVT_B(out[2]),
                SVT_R(out[3]), SVT_G(out[3]), SVT_B(out[3]), SVT_R(out[4]), SVT_G(out[4]), SVT_B(out[4]));
     }
