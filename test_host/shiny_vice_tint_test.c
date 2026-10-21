@@ -82,6 +82,23 @@ int main(void)
         }
     }
 
+    // Secondary: yellow body + orange flame -> primary is the vivid one, secondary the other hue.
+    {
+        u16 pal2[16];
+        u16 a, b;
+        Fill(pal2, SVT_RGB(0, 0, 0));
+        pal2[1] = SVT_RGB(31, 28, 4);   // yellow
+        pal2[2] = SVT_RGB(31, 14, 2);   // orange
+        a = ShinyViceTint_Pick(pal2);
+        b = ShinyViceTint_PickSecondary(pal2, a);
+        CHECK(b != 0 && b != a, "secondary is a different colour");
+        Fill(pal2, SVT_RGB(0, 0, 0));
+        pal2[1] = SVT_RGB(31, 14, 2);
+        pal2[2] = SVT_RGB(30, 13, 2);   // near-identical
+        a = ShinyViceTint_Pick(pal2);
+        CHECK(ShinyViceTint_PickSecondary(pal2, a) == 0, "no secondary for one-hue palette");
+    }
+
     if (sFailures == 0)
         printf("shiny_vice_tint: all tests passed\n");
     return sFailures != 0;

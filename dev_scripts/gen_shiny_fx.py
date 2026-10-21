@@ -12,7 +12,7 @@ Palette contract (must match include/shiny_vice_tint.h):
     6..10    gold star icon (never tinted): outline, gold, light, highlight, shade
 
 Sheet layout (16 px wide = 2 tiles per row; tile = (y / 8) * 2 + (x / 8)):
-    tiles  0-3    star icon, 16x16 frame, 11x12 art (supplied star artwork, reduced)
+    tiles  0-3    unused (the star lives in shiny_star.png, a 32x32 sheet of its own)
     tiles  4-6    small twinkle, 8x8 frames x3 (tile 7 unused)
     tiles  8..    medium twinkle, 16x16 frames x3   (8, 12, 16)
     tiles 20..    large twinkle,  16x16 frames x3   (20, 24, 28)
@@ -32,11 +32,11 @@ PALETTE = {
     3: (248, 200, 48),
     4: (248, 224, 144),
     5: (248, 248, 248),
-    6: (64, 40, 48),      # star outline   (artwork 65,36,46)
-    7: (240, 216, 16),    # star gold       (artwork 239,220,17)
-    8: (240, 232, 104),   # star pale glint (artwork 240,237,103)
-    9: (248, 248, 248),   # star white rim
-    10: (200, 104, 0),    # star orange shade (artwork 197,103,4)
+    6: (66, 37, 47),      # star outline      (from graphics/shiny_vice/star_source.png)
+    7: (240, 221, 17),    # star gold
+    8: (240, 237, 103),   # star pale glint
+    9: (255, 255, 255),   # star white rim
+    10: (199, 105, 4),    # star orange shade
 }
 
 SHADOW, TIP, BASE, LIGHT, WHITE = 1, 2, 3, 4, 5
@@ -72,34 +72,38 @@ def twinkle(arm, wide=0, burst=0):
     return out
 
 
-# Shiny star icon: the supplied artwork (Star.png, 20x22 with outline) hand-reduced to 11x12 so it
-# reads at a glance beside the gender/ball icons. Legend: O outline, Y gold, B orange shade,
-# W white rim highlight, L pale-yellow glint.
-STAR_ART = [
-    ".....O.....",
-    "....OYO....",
-    "...OYYYO...",
-    "OOOOYYYOOOO",
-    "OYYYYYYYYYO",
-    "OWYYYYYYYWO",
-    ".OBWYYYWBO.",
-    "..OBYYYBO..",
-    ".OYYYWYYYO.",
-    ".OWBBBBBWO.",
-    ".OBBOOOBBO.",
-    ".OOO...OOO.",
-]
-STAR_KEY = {"O": S_OUT, "Y": S_GOLD, "B": S_SHADE, "W": S_WHITE_STAR, "L": S_LIGHT}
+STAR_SRC = "graphics/shiny_vice/star_source.png"   # the supplied artwork (13 frames, 32x32)
+STAR_OUT = "graphics/shiny_vice/shiny_star.png"
+STAR_FRAME = 4                                       # clean, sparkle-free frame
 
 
-def star_icon():
-    px = {}
-    for y, row in enumerate(STAR_ART):
-        assert len(row) == 11, (y, row)
-        for x, c in enumerate(row):
-            if c != ".":
-                px[(x, y)] = STAR_KEY[c]
-    return px                                # 11x12, origin top-left
+def build_star():
+    """Writes the supplied star artwork 1:1 (no resampling) as a 32x32 4bpp sheet that shares the
+    fx palette (indices 6..10), so the sprite can use the owner's palette slot."""
+    src = Image.open(STAR_SRC).convert("RGBA")
+    frame = src.crop((STAR_FRAME * 32, 0, STAR_FRAME * 32 + 32, 32))
+    box = frame.getbbox()
+    art = frame.crop(box)
+    key = {(66, 37, 47): S_OUT, (240, 221, 17): S_GOLD, (240, 237, 103): S_LIGHT,
+           (255, 255, 255): S_WHITE_STAR, (199, 105, 4): S_SHADE}
+    out = Image.new("P", (32, 32), 0)
+    flat = []
+    for i in range(256):
+        flat.extend(PALETTE.get(i, (0, 0, 0)))
+    out.putpalette(flat)
+    px, ap = out.load(), art.load()
+    ox, oy = (32 - art.width) // 2, (32 - art.height) // 2
+    for y in range(art.height):
+        for x in range(art.width):
+            r, g, b, a = ap[x, y]
+            if a < 128:
+                continue
+            c = (r, g, b)
+            if c not in key:
+                c = min(key, key=lambda k: sum((u - v) ** 2 for u, v in zip(k, c)))
+            px[ox + x, oy + y] = key[c]
+    out.save(STAR_OUT, transparency=0)
+    print(f"wrote {STAR_OUT} ({art.width}x{art.height} art, 1:1)")
 
 
 FRAMES = [
@@ -135,10 +139,6 @@ def main():
             raise ValueError("pixel outside sheet")
         px[x, y] = idx
 
-    # star icon: 11x12 art centred in the 16x16 frame
-    for (x, y), v in star_icon().items():
-        put(0, x + 3, y + 2, v)
-
     for tile, size, centre, pixels in FRAMES:
         for (dx, dy), v in pixels.items():
             ox, oy = centre + dx, centre + dy
@@ -147,6 +147,7 @@ def main():
             put(tile, ox, oy, v)
 
     im.save(OUT, transparency=0)
+    build_star()
     print(f"wrote {OUT} ({width}x{height})")
 
 

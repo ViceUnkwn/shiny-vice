@@ -1,12 +1,12 @@
 #ifndef GUARD_SHINY_VICE_FX_H
 #define GUARD_SHINY_VICE_FX_H
 
-// Shiny Vice persistent shiny visuals: a gold star icon (11x12) and periodic thin twinkles in
+// Shiny Vice persistent shiny visuals: a gold star icon (supplied artwork, 20x22) and periodic thin twinkles in
 // four shapes (small, medium, large, 8-point burst). Twinkle colour is derived from the
 // Pokémon's own (shiny) sprite palette.
 // Uses its own RNG so the game/battle RNG sequence is never advanced.
 
-// 11x12 gold star icon centred on (x, y). While visible it also emits twinkles at random
+// 20x22 gold star icon (supplied artwork, 1:1) centred on (x, y). While visible it also emits twinkles at random
 // points inside the box centred on (areaX, areaY) with half-extents halfW/halfH.
 // Twinkles are tinted from the palette of the sprite whose id is stored at *monSpriteIdPtr
 // (re-read on every twinkle, so it follows the mon when the screen changes Pokémon).
