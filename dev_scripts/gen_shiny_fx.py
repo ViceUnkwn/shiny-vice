@@ -12,7 +12,7 @@ Palette contract (must match include/shiny_vice_tint.h):
     6..10    gold star icon (never tinted): outline, gold, light, highlight, shade
 
 Sheet layout (16 px wide = 2 tiles per row; tile = (y / 8) * 2 + (x / 8)):
-    tiles  0-3    star icon, 16x16 frame, 11x11 art centred on pixel (8, 8)
+    tiles  0-3    star icon, 16x16 frame, 11x12 art (supplied star artwork, reduced)
     tiles  4-6    small twinkle, 8x8 frames x3 (tile 7 unused)
     tiles  8..    medium twinkle, 16x16 frames x3   (8, 12, 16)
     tiles 20..    large twinkle,  16x16 frames x3   (20, 24, 28)
@@ -32,15 +32,15 @@ PALETTE = {
     3: (248, 200, 48),
     4: (248, 224, 144),
     5: (248, 248, 248),
-    6: (104, 56, 0),      # star outline
-    7: (248, 192, 16),    # star gold
-    8: (248, 240, 112),   # star light (upper-left edges)
-    9: (248, 248, 216),   # star highlight
-    10: (192, 128, 8),    # star shade (lower-right edges)
+    6: (64, 40, 48),      # star outline   (artwork 65,36,46)
+    7: (240, 216, 16),    # star gold       (artwork 239,220,17)
+    8: (240, 232, 104),   # star pale glint (artwork 240,237,103)
+    9: (248, 248, 248),   # star white rim
+    10: (200, 104, 0),    # star orange shade (artwork 197,103,4)
 }
 
 SHADOW, TIP, BASE, LIGHT, WHITE = 1, 2, 3, 4, 5
-S_OUT, S_GOLD, S_LIGHT, S_HI, S_SHADE = 6, 7, 8, 9, 10
+S_OUT, S_GOLD, S_LIGHT, S_WHITE_STAR, S_SHADE = 6, 7, 8, 9, 10
 
 
 def twinkle(arm, wide=0, burst=0):
@@ -72,58 +72,50 @@ def twinkle(arm, wide=0, burst=0):
     return out
 
 
-# 9x9 star body; the 1 px outline added around it makes the icon 11x11.
-STAR_FILL = [
-    "....#....",
-    "...###...",
-    "...###...",
-    "#########",
-    ".#######.",
-    "..#####..",
-    "..#####..",
-    ".###.###.",
-    ".##...##.",
+# Shiny star icon: the supplied artwork (Star.png, 20x22 with outline) hand-reduced to 11x12 so it
+# reads at a glance beside the gender/ball icons. Legend: O outline, Y gold, B orange shade,
+# W white rim highlight, L pale-yellow glint.
+STAR_ART = [
+    ".....O.....",
+    "....OYO....",
+    "...OYYYO...",
+    "OOOOYYYOOOO",
+    "OYYYYYYYYYO",
+    "OWYYYYYYYWO",
+    ".OBWYYYWBO.",
+    "..OBYYYBO..",
+    ".OYYYWYYYO.",
+    ".OWBBBBBWO.",
+    ".OBBOOOBBO.",
+    ".OOO...OOO.",
 ]
+STAR_KEY = {"O": S_OUT, "Y": S_GOLD, "B": S_SHADE, "W": S_WHITE_STAR, "L": S_LIGHT}
 
 
 def star_icon():
-    h, w = len(STAR_FILL), len(STAR_FILL[0])
-    fill = set()
-    for y, row in enumerate(STAR_FILL):
-        for x, c in enumerate(row):
-            if c == "#":
-                fill.add((x + 1, y + 1))
     px = {}
-    for (x, y) in fill:
-        v = S_GOLD
-        if (x, y - 1) not in fill or (x - 1, y) not in fill:
-            v = S_LIGHT                      # lit upper-left edges
-        if (x, y + 1) not in fill or (x + 1, y) not in fill:
-            v = S_SHADE                      # shaded lower-right edges
-        px[(x, y)] = v
-    for y in range(h + 2):
-        for x in range(w + 2):
-            if (x, y) not in fill and any(
-                    n in fill for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))):
-                px[(x, y)] = S_OUT
-    px[(3, 3)] = S_HI                        # one bright glint on the upper-left arm
-    return px                                # 11x11, origin top-left
+    for y, row in enumerate(STAR_ART):
+        assert len(row) == 11, (y, row)
+        for x, c in enumerate(row):
+            if c != ".":
+                px[(x, y)] = STAR_KEY[c]
+    return px                                # 11x12, origin top-left
 
 
 FRAMES = [
-    # (tile, frame size, centre offset, pixels)
-    (4, 8, 3, twinkle(1)),
-    (5, 8, 3, twinkle(2)),
-    (6, 8, 3, twinkle(3, wide=1)),
-    (8, 16, 7, twinkle(3, wide=1)),
-    (12, 16, 7, twinkle(4, wide=1)),
-    (16, 16, 7, twinkle(5, wide=1)),
-    (20, 16, 7, twinkle(4, wide=1)),
-    (24, 16, 7, twinkle(6, wide=1)),
-    (28, 16, 7, twinkle(7, wide=2)),
-    (32, 16, 7, twinkle(3, burst=1)),
-    (36, 16, 7, twinkle(5, wide=1, burst=2)),
-    (40, 16, 7, twinkle(7, wide=1, burst=3)),
+    # (tile, frame size, centre offset, pixels) - arms stay 1 px thin; only peaks get a bright core
+    (4, 8, 3, twinkle(0)),
+    (5, 8, 3, twinkle(1)),
+    (6, 8, 3, twinkle(2)),
+    (8, 16, 7, twinkle(1)),
+    (12, 16, 7, twinkle(2)),
+    (16, 16, 7, twinkle(3)),
+    (20, 16, 7, twinkle(2)),
+    (24, 16, 7, twinkle(3)),
+    (28, 16, 7, twinkle(5, wide=1)),
+    (32, 16, 7, twinkle(2, burst=1)),
+    (36, 16, 7, twinkle(3, burst=1)),
+    (40, 16, 7, twinkle(4, burst=2)),
 ]
 
 
@@ -143,9 +135,9 @@ def main():
             raise ValueError("pixel outside sheet")
         px[x, y] = idx
 
-    # star icon: 11x11 art placed so its centre pixel lands on (8, 8) of a 16x16 frame
+    # star icon: 11x12 art centred in the 16x16 frame
     for (x, y), v in star_icon().items():
-        put(0, x + 3, y + 3, v)
+        put(0, x + 3, y + 2, v)
 
     for tile, size, centre, pixels in FRAMES:
         for (dx, dy), v in pixels.items():
