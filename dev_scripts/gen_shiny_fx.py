@@ -72,42 +72,8 @@ def twinkle(arm, wide=0, burst=0):
     return out
 
 
-# Summary-screen star: the supplied artwork (graphics/shiny_vice/star_source.png, 20x22) hand-reduced
-# to 11x12 - it has to sit in the corner of the 64 px portrait without covering the Pokemon. A
-# resample loses the points, so the reduction is drawn by hand: O outline, Y gold, B orange shade,
-# W white rim, L pale glint. Written to shiny_star.png (16x16 frame, shares the fx palette 6..10).
-STAR_OUT = "graphics/shiny_vice/shiny_star.png"
-STAR_ART = [
-    ".....O.....",
-    "....OYO....",
-    "...OYYYO...",
-    "OOOOYYYOOOO",
-    "OYYYYYYYYYO",
-    "OWYYYYYYYWO",
-    ".OBWYYYWBO.",
-    "..OBYYYBO..",
-    ".OYYYWYYYO.",
-    ".OWBBBBBWO.",
-    ".OBBOOOBBO.",
-    ".OOO...OOO.",
-]
-STAR_KEY = {"O": S_OUT, "Y": S_GOLD, "B": S_SHADE, "W": S_WHITE_STAR, "L": S_LIGHT}
-
-
-def build_star():
-    out = Image.new("P", (16, 16), 0)
-    flat = []
-    for i in range(256):
-        flat.extend(PALETTE.get(i, (0, 0, 0)))
-    out.putpalette(flat)
-    px = out.load()
-    for y, row in enumerate(STAR_ART):
-        assert len(row) == 11, (y, row)
-        for x, c in enumerate(row):
-            if c != ".":
-                px[x + 3, y + 2] = STAR_KEY[c]
-    out.save(STAR_OUT, transparency=0)
-    print(f"wrote {STAR_OUT} (11x12 art in a 16x16 frame)")
+# NOTE: graphics/shiny_vice/shiny_star.png is a hand-made asset (own palette); this script no longer
+# writes it. Its reference artwork is graphics/shiny_vice/star_source.png.
 
 
 FRAMES = [
@@ -151,7 +117,6 @@ def main():
             put(tile, ox, oy, v)
 
     im.save(OUT, transparency=0)
-    build_star()
     print(f"wrote {OUT} ({width}x{height})")
 
 

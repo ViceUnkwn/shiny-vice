@@ -16,6 +16,7 @@
 // The tile sheet is shared by all owners under TAG_SHINY_VICE_FX.
 #define TAG_SHINY_VICE_FX   40500
 #define TAG_SHINY_VICE_STAR 40510
+#define TAG_SHINY_VICE_STAR_PAL 40511
 #define FX_OWNER_BATTLER_0  0
 #define FX_OWNER_SUMMARY    4
 #define FX_MAX_BATTLER_OWNERS 4
@@ -70,9 +71,16 @@ enum
 static const u32 sFxGfx[] = INCGFX_U32("graphics/shiny_vice/shiny_fx.png", ".4bpp");
 static const u16 sFxPal[] = INCGFX_U16("graphics/shiny_vice/shiny_fx.png", ".gbapal");
 
-// The star is the supplied artwork reduced to 11x12, in a 16x16 frame. It shares the owner palette slot:
-// the star colours live at palette indices 6..10, which tinting never touches.
+// The star is a hand-made 16x16 image (graphics/shiny_vice/shiny_star.png) with its own palette: any
+// 16-colour indexed PNG works (index 0 = transparent). It is NOT part of the tinted sparkle palette.
 static const u32 sStarGfx[] = INCGFX_U32("graphics/shiny_vice/shiny_star.png", ".4bpp");
+static const u16 sStarPal[] = INCGFX_U16("graphics/shiny_vice/shiny_star.png", ".gbapal");
+
+static const struct SpritePalette sStarPalette =
+{
+    .data = sStarPal,
+    .tag = TAG_SHINY_VICE_STAR_PAL,
+};
 
 static const struct SpriteSheet sStarSheet =
 {
@@ -558,6 +566,8 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
         return SPRITE_NONE;
     if (GetSpriteTileStartByTag(TAG_SHINY_VICE_STAR) == 0xFFFF && LoadSpriteSheet(&sStarSheet) == 0xFFFF)
         return SPRITE_NONE;
+    if (IndexOfSpritePaletteTag(TAG_SHINY_VICE_STAR_PAL) == 0xFF && LoadSpritePalette(&sStarPalette) == 0xFF)
+        return SPRITE_NONE;
     if (monSpriteIdPtr != NULL)
         TintFromSpritePalette(*monSpriteIdPtr, &tint, &tint2);
     else
@@ -572,7 +582,7 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
     if (spriteId == MAX_SPRITES)
         return SPRITE_NONE;
     gSprites[spriteId].oam.priority = oamPriority;
-    gSprites[spriteId].oam.paletteNum = slot;
+    gSprites[spriteId].oam.paletteNum = IndexOfSpritePaletteTag(TAG_SHINY_VICE_STAR_PAL);
     gSprites[spriteId].sTimer = SPARKLE_EMITTER_MIN_GAP;
     gSprites[spriteId].sAreaX = areaX;
     gSprites[spriteId].sAreaY = areaY;
