@@ -11,6 +11,7 @@
 #include "pokedex.h"
 #include "pokemon.h"
 #include "random.h"
+#include "shiny_quality.h"
 #include "scanline_effect.h"
 #include "sound.h"
 #include "sprite.h"
@@ -384,6 +385,8 @@ static void RollStarterPreviews(void)
     {
         sStarterPersonality[i] = Random32();
         sStarterIsShiny[i] = ComputePlayerShinyOdds(sStarterPersonality[i], READ_OTID_FROM_SAVE);
+        if (sStarterIsShiny[i])
+            sStarterPersonality[i] = ShinyVice_ImproveShinyPersonality(GetStarterPokemon(i), sStarterPersonality[i]);
     }
 }
 
@@ -397,9 +400,14 @@ void GiveStarterPokemon(u16 chosenStarterId)
         chosenStarterId = 0;
 
     isShiny = sStarterIsShiny[chosenStarterId];
-    CreateMonWithIVs(&mon, GetStarterPokemon(chosenStarterId), 5, sStarterPersonality[chosenStarterId], OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
-    GiveMonInitialMoveset(&mon);
+    CreateMon(&mon, GetStarterPokemon(chosenStarterId), 5, sStarterPersonality[chosenStarterId], OTID_STRUCT_PLAYER_ID);
+    // Force the preview's result before the IVs are rolled, so a shiny starter gets the shiny IV bonus.
     SetMonData(&mon, MON_DATA_IS_SHINY, &isShiny);
+    SetBoxMonIVs(&mon.box, USE_RANDOM_IVS);
+    if (isShiny)
+        ShinyVice_RollShinyAbility(&mon.box);
+    CalculateMonStats(&mon);
+    GiveMonInitialMoveset(&mon);
     GiveScriptedMonToPlayer(&mon, PARTY_SIZE);
 }
 

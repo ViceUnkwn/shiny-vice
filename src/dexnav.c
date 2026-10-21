@@ -1184,8 +1184,9 @@ static void CreateDexNavWildMon(enum Species species, u8 potential, u8 level, u8
     CreateWildMon(species, level);  // shiny rate bonus handled in CreateBoxMon
     SetBoxMonPerfectIVs(&mon->box, min(3, potential)); // Will not exceed 3 Perfect IVs
 
-    //Set ability
-    SetMonData(mon, MON_DATA_ABILITY_NUM, &abilityNum);
+    //Set ability (a shiny that rolled its hidden ability keeps it)
+    if (!(GetMonData(mon, MON_DATA_IS_SHINY) && GetMonData(mon, MON_DATA_ABILITY_NUM) == 2))
+        SetMonData(mon, MON_DATA_ABILITY_NUM, &abilityNum);
 
     // Set Held Item
     if (item)
@@ -2639,16 +2640,6 @@ static void DexNavDrawHiddenIcons(void)
 /////////////////////////
 //// GENERAL UTILITY ////
 /////////////////////////
-u32 CalculateDexNavShinyRolls(void)
-{
-    u32 chainBonus, rndBonus;
-    u8 chain = gSaveBlock3Ptr->dexNavChain;
-
-    chainBonus = (chain >= 100) ? 10 : (chain >= 50) ? 5 : 0;
-    rndBonus = (Random() % 100 < 4) ? 4 : 0;
-    return chainBonus + rndBonus;
-}
-
 void TryIncrementSpeciesSearchLevel()
 {
 #if USE_DEXNAV_SEARCH_LEVELS == TRUE

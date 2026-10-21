@@ -184,9 +184,6 @@ void NewGameInitData(void)
     PlayTimeCounter_Reset();
     ClearPokedexFlags();
     InitEventData();
-#if DEXNAV_ENABLED
-    FlagSet(DN_FLAG_DEXNAV_GET); // TEMP: grant DexNav at new game while testing; replace with a story/shard unlock
-#endif
     ClearTVShowData();
     ResetGabbyAndTy();
     ClearSecretBases();

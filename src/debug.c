@@ -47,6 +47,7 @@
 #include "rtc.h"
 #include "script.h"
 #include "script_pokemon_util.h"
+#include "shiny_quality.h"
 #include "sound.h"
 #include "strings.h"
 #include "string_util.h"
@@ -415,6 +416,7 @@ extern const u8 Common_EventScript_MoveRelearner[];
 
 static const struct DebugSelection sWarpSelection;
 static const struct DebugSelection sSetWeatherSelection;
+static const struct DebugSelection sShinyOddsSelection;
 static const struct DebugSelection sSpeciesGeneratorSelection;
 static const struct DebugSelection sItemGeneratorSelection;
 static const struct DebugSelection sMassOutbreakSpeciesSelection;
@@ -590,6 +592,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Fly to map…"),               DebugAction_Util_Fly },
     { COMPOUND_STRING("Warp to map warp…"),         DebugAction_Selection_Init, &sWarpSelection},
     { COMPOUND_STRING("Set weather…"),              DebugAction_Selection_Init, &sSetWeatherSelection },
+    { COMPOUND_STRING("Shiny odds…"),               DebugAction_Selection_Init, &sShinyOddsSelection },
     { COMPOUND_STRING("Font Test…"),                DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),           DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
     { COMPOUND_STRING("Watch credits…"),            DebugAction_Util_WatchCredits },
@@ -1963,6 +1966,48 @@ static const struct DebugSelection sSetWeatherSelection = {
     .onCancel = DebugSelectionStep_ReturnToUtilMenu,
     .onComplete = DebugSelection_SetWeather_OnComplete,
     .steps = {&sWeatherSelectionStep},
+    .maxSteps = 1,
+};
+
+// Shiny Vice: change the base shiny rate for Pokémon created from now on ("1 in N", resets on boot).
+// Charms, chains and lures still add their extra rolls on top of this.
+static void DebugSelection_ShinyOdds_OnInit(u8 taskId)
+{
+    u32 denominator = ShinyVice_GetRollDenominator();
+
+    Debug_CreateInputDisplayWindow(taskId);
+    DebugSelection_SetData(taskId, 0, min(denominator, 0xFFFF));
+}
+
+static void DebugSelectionStep_UpdateShinyOdds(u8 taskId, u8 digits, u32 min, u32 max)
+{
+    ConvertIntToDecimalStringN(gStringVar3, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, digits);
+    StringExpandPlaceholders(gStringVar1, COMPOUND_STRING("Odds: 1/{STR_VAR_3}"));
+    StringCopy(gStringVar2, COMPOUND_STRING("Base roll only"));
+    StringCopy(gStringVar3, COMPOUND_STRING("1 = always shiny"));
+    DebugNativeStep_PrintWindowSelection(taskId);
+}
+
+static bool32 DebugSelection_ShinyOdds_OnComplete(u8 taskId)
+{
+    ShinyVice_SetRollDenominator(DebugSelection_GetData(taskId, 0));
+    Debug_DestroyMenu_Full(taskId);
+    return TRUE;
+}
+
+static const struct DebugSelectionStep sShinyOddsSelectionStep = {
+    .stepUpdate = DebugSelectionStep_UpdateShinyOdds,
+    .stepConfirm = DebugSelectionStep_GenericInputConfirm,
+    .minValue = 1,
+    .maxValue = 0xFFFF,
+    .digits = 5
+};
+
+static const struct DebugSelection sShinyOddsSelection = {
+    .onInit = DebugSelection_ShinyOdds_OnInit,
+    .onCancel = DebugSelectionStep_ReturnToUtilMenu,
+    .onComplete = DebugSelection_ShinyOdds_OnComplete,
+    .steps = {&sShinyOddsSelectionStep},
     .maxSteps = 1,
 };
 

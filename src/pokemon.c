@@ -48,6 +48,7 @@
 #include "recorded_battle.h"
 #include "regions.h"
 #include "rtc.h"
+#include "shiny_quality.h"
 #include "shiny_roll.h"
 #include "sound.h"
 #include "string_util.h"
@@ -895,14 +896,15 @@ bool32 ComputePlayerShinyOdds(u32 personality, u32 value)
         sources.chain = ShinyVice_ChainBonus(gSaveBlock3Ptr->dexNavChain);
 
     u32 totalRerolls = ShinyVice_ComputeExtraRolls(&sources);
+    u32 threshold = ShinyVice_GetRollThreshold();
 
-    while (GET_SHINY_VALUE(value, personality) >= SHINY_ODDS && totalRerolls > 0)
+    while (GET_SHINY_VALUE(value, personality) >= threshold && totalRerolls > 0)
     {
         personality = Random32();
         totalRerolls--;
     }
 
-    return GET_SHINY_VALUE(value, personality) < SHINY_ODDS;
+    return GET_SHINY_VALUE(value, personality) < threshold;
 }
 
 void SetBoxMonIVs(struct BoxPokemon *mon, u8 fixedIV)
@@ -938,6 +940,10 @@ void SetBoxMonIVs(struct BoxPokemon *mon, u8 fixedIV)
     SetBoxMonData(mon, MON_DATA_SPDEF_IV, &iv);
 
     SetBoxMonPerfectIVs(mon, gSpeciesInfo[species].perfectIVCount);
+
+    // Shiny Vice: shinies get guaranteed perfect IVs and better rolls on the rest.
+    if (GetBoxMonData(mon, MON_DATA_IS_SHINY))
+        ShinyVice_ApplyShinyIvBonus(mon);
 }
 
 void SetBoxMonPerfectIVs(struct BoxPokemon *mon, u32 numPerfect)
@@ -975,6 +981,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, enum Species species, u8 level, u32
     u32 value;
     u16 checksum;
     bool32 isShiny;
+    bool32 isPlayerShiny = FALSE;
 
     ZeroBoxMonData(boxMon);
     // Determine original trainer ID
@@ -992,6 +999,12 @@ void CreateBoxMon(struct BoxPokemon *boxMon, enum Species species, u8 level, u32
     {
         value = READ_OTID_FROM_SAVE;
         isShiny = ComputePlayerShinyOdds(personality, value);
+        if (isShiny)
+        {
+            // Shiny Vice: shininess is stored separately from the personality, so it is safe to pick a better one.
+            isPlayerShiny = TRUE;
+            personality = ShinyVice_ImproveShinyPersonality(species, personality);
+        }
     }
 
     SetBoxMonData(boxMon, MON_DATA_PERSONALITY, &personality);
@@ -1022,6 +1035,8 @@ void CreateBoxMon(struct BoxPokemon *boxMon, enum Species species, u8 level, u32
     //using gen 3-4 ability formula, it was changed in later gens
     if (GetSpeciesAbility(species, 1))
         SetBoxMonData(boxMon, MON_DATA_ABILITY_NUM, &value);
+    if (isPlayerShiny)
+        ShinyVice_RollShinyAbility(boxMon);
 }
 
 static bool32 IsValidGender(u32 gender)

@@ -104,7 +104,10 @@ enum __attribute__((packed)) Stat
 #define MAX_STAT_STAGE    12
 
 // Shiny odds
-#define SHINY_ODDS 32768  // 16/65536 = 1/4096 32768=temp value for testing 50%
+// A Pokémon is shiny when its shiny value is below this, so the base rate is SHINY_ODDS/65536 (16 = 1/4096).
+// Stored Pokémon are classified with this fixed value. To test other rates use the debug menu
+// (R + Start > Utilities > Shiny odds), which changes only the roll for newly created Pokémon.
+#define SHINY_ODDS 16
 
 // Ribbon IDs used by TV and Pokénav
 #define CHAMPION_RIBBON       0
