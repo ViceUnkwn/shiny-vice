@@ -33,6 +33,7 @@
 #include "pokemon_sprite_visualizer.h"
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
+#include "shiny_vice_fx.h"
 #include "pokerus.h"
 #include "region_map.h"
 #include "scanline_effect.h"
@@ -111,6 +112,7 @@ enum
     SPRITE_ARR_ID_MON,
     SPRITE_ARR_ID_BALL,
     SPRITE_ARR_ID_STATUS,
+    SPRITE_ARR_ID_SHINY_STAR,
     SPRITE_ARR_ID_TYPE, // 2 for mon types, 5 for move types(4 moves and 1 to learn), used interchangeably, because mon types and move types aren't shown on the same screen
     SPRITE_ARR_ID_MOVE_SELECTOR1 = SPRITE_ARR_ID_TYPE + TYPE_ICON_SPRITE_COUNT, // 10 sprites that make up the selector
     SPRITE_ARR_ID_MOVE_SELECTOR2 = SPRITE_ARR_ID_MOVE_SELECTOR1 + MOVE_SELECTOR_SPRITES_COUNT,
@@ -309,6 +311,7 @@ static void CreateMonMarkingsSprite(struct Pokemon *);
 static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *);
 static void CreateCaughtBallSprite(struct Pokemon *);
 static void CreateSetStatusSprite(void);
+static void CreateOrUpdateShinyStarSprite(void);
 static void CreateMoveSelectorSprites(u8);
 static void SpriteCB_MoveSelector(struct Sprite *);
 static void DestroyMoveSelectorSprites(u8);
@@ -1381,6 +1384,7 @@ static bool8 LoadGraphics(void)
         break;
     case 20:
         CreateSetStatusSprite();
+        CreateOrUpdateShinyStarSprite();
         gMain.state++;
         break;
     case 21:
@@ -2041,6 +2045,7 @@ static void Task_ChangeSummaryMon(u8 taskId)
         if (sMonSummaryScreen->summary.ailment != AILMENT_NONE)
             PositionStatusSlidingWindow(10, -2);
         DrawPokerusCuredSymbol(&sMonSummaryScreen->currentMon);
+        CreateOrUpdateShinyStarSprite();
         data[1] = 0;
         break;
     case 8:
@@ -4649,6 +4654,32 @@ static void CreateSetStatusSprite(void)
     {
         SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
     }
+}
+
+// Shiny star icon in the portrait's top-right corner. Also emits twinkles over the portrait.
+#define SHINY_STAR_X        64
+#define SHINY_STAR_Y        40
+#define SHINY_PORTRAIT_X    40
+#define SHINY_PORTRAIT_Y    64
+#define SHINY_PORTRAIT_HALF 26
+
+static void CreateOrUpdateShinyStarSprite(void)
+{
+    u8 *spriteId = &sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_SHINY_STAR];
+    struct PokeSummary *summary = &sMonSummaryScreen->summary;
+    bool8 show = summary->isShiny && !summary->isEgg;
+
+    if (*spriteId == SPRITE_NONE)
+    {
+        if (!show)
+            return;
+        *spriteId = ShinyViceFx_CreateEmitterStar(SHINY_STAR_X, SHINY_STAR_Y,
+                                                  SHINY_PORTRAIT_X, SHINY_PORTRAIT_Y,
+                                                  SHINY_PORTRAIT_HALF, SHINY_PORTRAIT_HALF, 0);
+        if (*spriteId == SPRITE_NONE)
+            return;
+    }
+    SetSpriteInvisibility(SPRITE_ARR_ID_SHINY_STAR, !show);
 }
 
 static void CreateMoveSelectorSprites(u8 idArrayStart)

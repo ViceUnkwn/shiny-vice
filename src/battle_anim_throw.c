@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "shiny_vice_fx.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
 #include "decompress.h"
@@ -2173,6 +2174,7 @@ void TryShinyAnimation(enum BattlerId battler, struct Pokemon *mon)
                 LoadSpritePalette(&gBattleAnimTable[GET_TRUE_SPRITE_INDEX(ANIM_TAG_GOLD_STARS)].palette);
             }
 
+            ShinyViceFx_StartBattleSparkle(battler);
             taskCirc = CreateTask(Task_ShinyStars, 10);
             taskDgnl = CreateTask(Task_ShinyStars, 10);
             gTasks[taskCirc].tBattler = battler;
