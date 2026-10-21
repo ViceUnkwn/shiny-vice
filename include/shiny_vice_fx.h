@@ -17,5 +17,6 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
 
 // Battle: keeps twinkling over a shiny battler's sprite. Safe to call repeatedly.
 void ShinyViceFx_StartBattleSparkle(u32 battler);
+void ShinyViceFx_StopBattleSparkle(void);
 
 #endif // GUARD_SHINY_VICE_FX_H

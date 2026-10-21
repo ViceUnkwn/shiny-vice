@@ -82,11 +82,22 @@ static inline void ShinyViceTint_Apply(u16 *pal16, u16 tint)
     pal16[4] = ShinyViceTint_Lighten(tint, 1, 2); // light
 }
 
-// Second sparkle colour: the most vivid palette colour whose hue is clearly different from
-// `primary` (e.g. a yellow body with an orange flame -> orange). Returns 0 if there is none.
-#define SVT_MIN_HUE_GAP 10 // summed per-channel distance, both colours normalised to peak 31
+// Distinct sparkle colours: the most vivid palette colour whose hue is clearly different from
+// every non-zero colour in `avoidA` / `avoidB` (e.g. a yellow body with an orange flame ->
+// orange). Returns 0 if there is none.
+#define SVT_MIN_HUE_GAP       10 // secondary: summed per-channel distance, both colours normalised to peak 31
+#ifndef SVT_MIN_HUE_GAP_THIRD
+#define SVT_MIN_HUE_GAP_THIRD 22 // tertiary: stricter, so a third colour is only used when it really reads as another hue
+#endif
 
-static inline u16 ShinyViceTint_PickSecondary(const u16 *pal16, u16 primary)
+static inline u32 ShinyViceTint_HueGap(u32 nr, u32 ng, u32 nb, u16 other)
+{
+    return (nr > SVT_R(other) ? nr - SVT_R(other) : SVT_R(other) - nr)
+         + (ng > SVT_G(other) ? ng - SVT_G(other) : SVT_G(other) - ng)
+         + (nb > SVT_B(other) ? nb - SVT_B(other) : SVT_B(other) - nb);
+}
+
+static inline u16 ShinyViceTint_PickDistinct(const u16 *pal16, u16 avoidA, u16 avoidB, u32 minGap)
 {
     u32 i;
     u32 bestScore = 0;
@@ -99,7 +110,7 @@ static inline u16 ShinyViceTint_PickSecondary(const u16 *pal16, u16 primary)
         u32 b = SVT_B(pal16[i]);
         u32 mx = r;
         u32 mn = r;
-        u32 chroma, score, nr, ng, nb, gap;
+        u32 chroma, score, nr, ng, nb;
 
         if (g > mx) mx = g;
         if (b > mx) mx = b;
@@ -111,10 +122,9 @@ static inline u16 ShinyViceTint_PickSecondary(const u16 *pal16, u16 primary)
         nr = (r * 31 + mx / 2) / mx;
         ng = (g * 31 + mx / 2) / mx;
         nb = (b * 31 + mx / 2) / mx;
-        gap = (nr > SVT_R(primary) ? nr - SVT_R(primary) : SVT_R(primary) - nr)
-            + (ng > SVT_G(primary) ? ng - SVT_G(primary) : SVT_G(primary) - ng)
-            + (nb > SVT_B(primary) ? nb - SVT_B(primary) : SVT_B(primary) - nb);
-        if (gap < SVT_MIN_HUE_GAP)
+        if (avoidA != 0 && ShinyViceTint_HueGap(nr, ng, nb, avoidA) < minGap)
+            continue;
+        if (avoidB != 0 && ShinyViceTint_HueGap(nr, ng, nb, avoidB) < minGap)
             continue;
         score = chroma * 4 + mx;
         if (score > bestScore)
@@ -126,6 +136,21 @@ static inline u16 ShinyViceTint_PickSecondary(const u16 *pal16, u16 primary)
     return best;
 }
 
+// Second colour: clearly different from `primary`. 0 if the palette has only one hue.
+static inline u16 ShinyViceTint_PickSecondary(const u16 *pal16, u16 primary)
+{
+    return ShinyViceTint_PickDistinct(pal16, primary, 0, SVT_MIN_HUE_GAP);
+}
+
+// Third colour: clearly different from both `primary` and `secondary`. 0 if there is none
+// (always 0 when there is no secondary, so a palette yields 1, 2 or 3 colours in order).
+static inline u16 ShinyViceTint_PickTertiary(const u16 *pal16, u16 primary, u16 secondary)
+{
+    if (secondary == 0)
+        return 0;
+    return ShinyViceTint_PickDistinct(pal16, primary, secondary, SVT_MIN_HUE_GAP_THIRD);
+}
+
 // Two-tone ramp: shadow = dark primary, tip = secondary (or a mid primary if 0), base = primary,
 // light = pale primary. Index 5 (white core) stays white.
 static inline void ShinyViceTint_Apply2(u16 *pal16, u16 primary, u16 secondary)
@@ -134,6 +159,15 @@ static inline void ShinyViceTint_Apply2(u16 *pal16, u16 primary, u16 secondary)
     pal16[2] = secondary != 0 ? secondary : ShinyViceTint_Scale(primary, 7, 10);
     pal16[3] = primary;
     pal16[4] = ShinyViceTint_Lighten(primary, 1, 2);
+}
+
+// Three-tone ramp: Apply2, then the inner (light) arm pixels take a pale tertiary instead of a
+// pale primary. tertiary == 0 leaves the two-tone ramp as is.
+static inline void ShinyViceTint_Apply3(u16 *pal16, u16 primary, u16 secondary, u16 tertiary)
+{
+    ShinyViceTint_Apply2(pal16, primary, secondary);
+    if (tertiary != 0)
+        pal16[4] = ShinyViceTint_Lighten(tertiary, 1, 2);
 }
 
 #endif // GUARD_SHINY_VICE_TINT_H

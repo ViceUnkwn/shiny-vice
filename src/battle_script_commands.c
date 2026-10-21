@@ -3,6 +3,7 @@
 #include "battle_hold_effects.h"
 #include "battle_message.h"
 #include "battle_anim.h"
+#include "shiny_vice_fx.h"
 #include "battle_anim_scripts.h"
 #include "battle_ai_record.h"
 #include "battle_ai_util.h"
@@ -7811,6 +7812,7 @@ static void FinalizeCapture(void)
     MarkBattlerForControllerExec(gBattlerAttacker);
     TryBattleFormChange(gBattlerTarget, FORM_CHANGE_END_BATTLE, GetBattlerAbility(gBattlerTarget));
     gBattlescriptCurrInstr = BattleScript_SuccessBallThrow;
+    ShinyViceFx_StopBattleSparkle(); // sparkles must not outlive the capture
     struct Pokemon *caughtMon = GetBattlerMon(gBattlerTarget);
     SetMonData(caughtMon, MON_DATA_POKEBALL, &ballId);
 
@@ -8456,6 +8458,7 @@ static void Cmd_displaydexinfo(void)
     switch (gBattleCommunication[0])
     {
     case 0:
+        ShinyViceFx_StopBattleSparkle();
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         ClearTemporarySpeciesSpriteData(caughtBattler, FALSE, FALSE);
         BattleLoadMonSpriteGfx(mon, caughtBattler);

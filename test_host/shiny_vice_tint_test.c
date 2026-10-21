@@ -99,6 +99,44 @@ int main(void)
         CHECK(ShinyViceTint_PickSecondary(pal2, a) == 0, "no secondary for one-hue palette");
     }
 
+    // Tertiary: three clearly different hues -> 3 colours, all distinct; two hues -> none.
+    {
+        u16 pal3[16];
+        u16 a, b, c;
+        Fill(pal3, SVT_RGB(0, 0, 0));
+        pal3[1] = SVT_RGB(31, 28, 4);   // yellow
+        pal3[2] = SVT_RGB(31, 14, 2);   // orange
+        pal3[3] = SVT_RGB(4, 12, 31);   // blue
+        a = ShinyViceTint_Pick(pal3);
+        b = ShinyViceTint_PickSecondary(pal3, a);
+        c = ShinyViceTint_PickTertiary(pal3, a, b);
+        CHECK(a != 0 && b != 0 && c != 0, "three-hue palette yields three colours");
+        CHECK(a != b && b != c && a != c, "the three colours are all different");
+        Fill(pal3, SVT_RGB(0, 0, 0));
+        pal3[1] = SVT_RGB(31, 28, 4);
+        pal3[2] = SVT_RGB(31, 14, 2);
+        a = ShinyViceTint_Pick(pal3);
+        b = ShinyViceTint_PickSecondary(pal3, a);
+        CHECK(ShinyViceTint_PickTertiary(pal3, a, b) == 0, "no tertiary for a two-hue palette");
+        CHECK(ShinyViceTint_PickTertiary(pal3, a, 0) == 0, "no tertiary without a secondary");
+    }
+
+    // Apply3: tertiary only touches the light slot; white core and tertiary == 0 behave as Apply2.
+    {
+        u16 out2[16], out3[16];
+        int i;
+        for (i = 0; i < 16; i++)
+            out2[i] = out3[i] = SVT_RGB(31, 31, 31);
+        ShinyViceTint_Apply2(out2, SVT_RGB(31, 25, 6), SVT_RGB(31, 12, 2));
+        ShinyViceTint_Apply3(out3, SVT_RGB(31, 25, 6), SVT_RGB(31, 12, 2), 0);
+        CHECK(out2[1] == out3[1] && out2[2] == out3[2] && out2[3] == out3[3] && out2[4] == out3[4],
+              "Apply3 with tertiary 0 equals Apply2");
+        ShinyViceTint_Apply3(out3, SVT_RGB(31, 25, 6), SVT_RGB(31, 12, 2), SVT_RGB(4, 12, 31));
+        CHECK(out3[1] == out2[1] && out3[2] == out2[2] && out3[3] == out2[3], "Apply3 keeps shadow/tip/base");
+        CHECK(out3[4] != out2[4] && SVT_B(out3[4]) > SVT_R(out3[4]), "Apply3 light slot takes the tertiary");
+        CHECK(out3[5] == SVT_RGB(31, 31, 31), "white core untouched");
+    }
+
     if (sFailures == 0)
         printf("shiny_vice_tint: all tests passed\n");
     return sFailures != 0;

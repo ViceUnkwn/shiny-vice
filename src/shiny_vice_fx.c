@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
+#include "battle_main.h"
 #include "battle_util.h"
 #include "main.h"
 #include "palette.h"
@@ -417,29 +418,31 @@ static bool32 LoadFxSheet(void)
 }
 
 // Colour source: the palette currently loaded for a sprite (the Pokémon's own, shiny, palette).
-static void TintFromSpritePalette(u32 spriteId, u16 *primary, u16 *secondary)
+static void TintFromSpritePalette(u32 spriteId, u16 *primary, u16 *secondary, u16 *tertiary)
 {
     const u16 *pal;
 
     *primary = SVT_DEFAULT_TINT;
     *secondary = 0;
+    *tertiary = 0;
     if (spriteId >= MAX_SPRITES || !gSprites[spriteId].inUse)
         return;
     pal = &gPlttBufferUnfaded[OBJ_PLTT_ID(gSprites[spriteId].oam.paletteNum)];
     *primary = ShinyViceTint_Pick(pal);
     *secondary = ShinyViceTint_PickSecondary(pal, *primary);
+    *tertiary = ShinyViceTint_PickTertiary(pal, *primary, *secondary);
 }
 
 // Builds the tinted palette for an owner and loads it (allocating a slot the first time,
 // overwriting in place afterwards). Returns the OBJ palette slot, or 0xFF if none is free.
-static u8 LoadOwnerPalette(u8 owner, u16 tint, u16 tint2)
+static u8 LoadOwnerPalette(u8 owner, u16 tint, u16 tint2, u16 tint3)
 {
     u16 pal[16];
     u16 tag = TAG_SHINY_VICE_FX + owner;
     u8 slot = IndexOfSpritePaletteTag(tag);
 
     CpuCopy16(sFxPal, pal, sizeof(pal));
-    ShinyViceTint_Apply2(pal, tint, tint2);
+    ShinyViceTint_Apply3(pal, tint, tint2, tint3);
     if (slot == 0xFF)
     {
         struct SpritePalette spritePal = { .data = pal, .tag = tag };
@@ -522,14 +525,13 @@ static void EmitTwinkles(s16 centerX, s16 centerY, u8 halfW, u8 halfH, u8 oamPri
 #define sAreaY      data[2]
 #define sHalfW      data[3]
 #define sHalfH      data[4]
-#define sTint       data[5] // tint the owner palette currently holds (0 = none yet)
 #define sTintPtrLo  data[6] // const u8 * to the sprite id whose palette supplies the tint
 #define sTintPtrHi  data[7]
 
 static void SpriteCB_EmitterStar(struct Sprite *sprite)
 {
     const u8 *tintSpriteIdPtr;
-    u16 tint, tint2;
+    u16 tint, tint2, tint3;
 
     if (sprite->invisible)
         return;
@@ -542,14 +544,15 @@ static void SpriteCB_EmitterStar(struct Sprite *sprite)
 
     tintSpriteIdPtr = (const u8 *)(((u32)(u16)sprite->sTintPtrHi << 16) | (u16)sprite->sTintPtrLo);
     if (tintSpriteIdPtr != NULL)
-        TintFromSpritePalette(*tintSpriteIdPtr, &tint, &tint2);
+        TintFromSpritePalette(*tintSpriteIdPtr, &tint, &tint2, &tint3);
     else
     {
         tint = SVT_DEFAULT_TINT;
         tint2 = 0;
+        tint3 = 0;
     }
     // Re-read the Pokémon's palette on every twinkle: cheap, and follows palette swaps.
-    if (LoadOwnerPalette(FX_OWNER_SUMMARY, tint, tint2) == 0xFF)
+    if (LoadOwnerPalette(FX_OWNER_SUMMARY, tint, tint2, tint3) == 0xFF)
         return;
     EmitTwinkles(sprite->sAreaX, sprite->sAreaY, sprite->sHalfW, sprite->sHalfH,
                  sprite->oam.priority, FX_OWNER_SUMMARY);
@@ -560,7 +563,7 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
 {
     u8 spriteId;
     u8 slot;
-    u16 tint, tint2;
+    u16 tint, tint2, tint3;
 
     if (!LoadFxSheet())
         return SPRITE_NONE;
@@ -569,13 +572,14 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
     if (IndexOfSpritePaletteTag(TAG_SHINY_VICE_STAR_PAL) == 0xFF && LoadSpritePalette(&sStarPalette) == 0xFF)
         return SPRITE_NONE;
     if (monSpriteIdPtr != NULL)
-        TintFromSpritePalette(*monSpriteIdPtr, &tint, &tint2);
+        TintFromSpritePalette(*monSpriteIdPtr, &tint, &tint2, &tint3);
     else
     {
         tint = SVT_DEFAULT_TINT;
         tint2 = 0;
+        tint3 = 0;
     }
-    slot = LoadOwnerPalette(FX_OWNER_SUMMARY, tint, tint2);
+    slot = LoadOwnerPalette(FX_OWNER_SUMMARY, tint, tint2, tint3);
     if (slot == 0xFF)
         return SPRITE_NONE;
     spriteId = CreateSprite(&sSpriteTemplate_Star, x, y, 0);
@@ -598,14 +602,12 @@ u8 ShinyViceFx_CreateEmitterStar(s16 x, s16 y, s16 areaX, s16 areaY, u8 halfW, u
 #undef sAreaY
 #undef sHalfW
 #undef sHalfH
-#undef sTint
 #undef sTintPtrLo
 #undef sTintPtrHi
 
 // Battle sparkle task data
 #define tBattler data[0]
 #define tTimer   data[1]
-#define tTint    data[2] // tint the owner palette currently holds (0 = none yet)
 
 static void Task_BattleSparkle(u8 taskId)
 {
@@ -614,7 +616,7 @@ static void Task_BattleSparkle(u8 taskId)
     struct Pokemon *mon;
     struct Pokemon *illusionMon;
     struct Sprite *monSprite;
-    u16 tint, tint2;
+    u16 tint, tint2, tint3;
 
     if (!gMain.inBattle || gBattleSpritesDataPtr == NULL || battler >= gBattlersCount)
     {
@@ -622,6 +624,16 @@ static void Task_BattleSparkle(u8 taskId)
         DestroyTask(taskId);
         return;
     }
+
+    // Caught: the dex page / nickname prompt / naming screen take over VRAM, palettes and sprites.
+    if (gBattleOutcome == B_OUTCOME_CAUGHT)
+    {
+        ShinyViceFx_StopBattleSparkle();
+        return;
+    }
+    // Only emit while the plain battle screen is up (not bag, party, summary, naming screen, ...).
+    if (gMain.callback2 != BattleMainCB2)
+        return;
 
     if (tTimer > 0)
     {
@@ -643,9 +655,9 @@ static void Task_BattleSparkle(u8 taskId)
     monSprite = &gSprites[gBattlerSpriteIds[battler]];
 
     // Follow whatever palette the battler sprite is wearing right now (switch-ins,
-    // Transform and Illusion all change it), reloading our palette only when it changes.
-    TintFromSpritePalette(gBattlerSpriteIds[battler], &tint, &tint2);
-    if (LoadOwnerPalette(FX_OWNER_BATTLER_0 + battler, tint, tint2) == 0xFF)
+    // Transform and Illusion all change it); it is re-read on every twinkle.
+    TintFromSpritePalette(gBattlerSpriteIds[battler], &tint, &tint2, &tint3);
+    if (LoadOwnerPalette(FX_OWNER_BATTLER_0 + battler, tint, tint2, tint3) == 0xFF)
         return;
 
     EmitTwinkles(GetBattlerSpriteCoord(battler, BATTLER_COORD_X),
@@ -669,9 +681,27 @@ void ShinyViceFx_StartBattleSparkle(u32 battler)
     taskId = CreateTask(Task_BattleSparkle, 20);
     gTasks[taskId].tBattler = battler;
     gTasks[taskId].tTimer = SPARKLE_BATTLE_FIRST_DELAY;
-    gTasks[taskId].tTint = 0;
+}
+
+// Stops battle sparkles and releases everything they hold (called when a capture succeeds).
+void ShinyViceFx_StopBattleSparkle(void)
+{
+    u32 i;
+
+    for (i = 0; i < NUM_TASKS; i++)
+    {
+        if (gTasks[i].isActive && gTasks[i].func == Task_BattleSparkle)
+            DestroyTask(i);
+    }
+    for (i = 0; i < MAX_SPRITES; i++)
+    {
+        if (gSprites[i].inUse && gSprites[i].callback == SpriteCB_Twinkle)
+            DestroySprite(&gSprites[i]);
+    }
+    for (i = 0; i < FX_MAX_BATTLER_OWNERS; i++)
+        FreeSpritePaletteByTag(TAG_SHINY_VICE_FX + FX_OWNER_BATTLER_0 + i);
+    FreeSpriteTilesByTag(TAG_SHINY_VICE_FX);
 }
 
 #undef tBattler
 #undef tTimer
-#undef tTint
