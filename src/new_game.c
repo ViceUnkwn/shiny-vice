@@ -52,6 +52,7 @@
 #include "constants/items.h"
 #include "difficulty.h"
 #include "follower_npc.h"
+#include "shiny_vice_settings.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
 extern const u8 EventScript_ResetAllMapFlagsFrlg[];
@@ -234,6 +235,8 @@ void NewGameInitData(void)
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
+    // After ClearSav3 above, so the New Game screen's choices are not wiped.
+    ShinyViceSettings_CommitPending();
 }
 
 static void ResetMiniGamesRecords(void)

@@ -252,6 +252,7 @@ struct NPCFollower
 };
 
 #include "constants/items.h"
+#include "shiny_vice_settings.h"
 #define ITEM_FLAGS_COUNT ((ITEMS_COUNT / 8) + ((ITEMS_COUNT % 8) ? 1 : 0))
 
 struct SaveBlock3
@@ -269,6 +270,7 @@ struct SaveBlock3
     u8 dexNavSearchLevels[NUM_SPECIES];
 #endif
     u8 dexNavChain;
+    struct ShinyViceSettings svSettings; // chosen on the New Game settings screen, fixed for the save
 #if APRICORN_TREE_COUNT > 0
     u8 apricornTrees[NUM_APRICORN_TREE_BYTES];
 #endif

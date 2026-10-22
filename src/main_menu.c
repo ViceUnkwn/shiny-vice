@@ -40,6 +40,7 @@
 #include "title_screen.h"
 #include "window.h"
 #include "mystery_gift_menu.h"
+#include "new_game_settings_screen.h"
 
 /*
  * Main menu state machine
@@ -1091,7 +1092,10 @@ static void Task_HandleMainMenuAPressed(u8 taskId)
 
             gPlttBufferUnfaded[0] = RGB_BLACK;
             gPlttBufferFaded[0] = RGB_BLACK;
-            gTasks[taskId].func = Task_NewGameBirchSpeech_Init;
+            // Shiny Vice: pick the gamemode settings first. Confirming resumes at the Birch speech
+            // (CB2_NewGameBirchSpeechAfterSettings); B returns to this main menu.
+            SetMainCallback2(CB2_InitNewGameSettings);
+            DestroyTask(taskId);
             break;
         case ACTION_CONTINUE:
             gPlttBufferUnfaded[0] = RGB_BLACK;
@@ -1293,6 +1297,55 @@ static void HighlightSelectedMainMenuItem(enum PartyMenuType menuType, u8 select
 #define tLotadSpriteId data[9]
 #define tBrendanSpriteId data[10]
 #define tMaySpriteId data[11]
+
+// Shiny Vice: entry point used after the New Game settings screen. Rebuilds the same graphics
+// environment the main menu has when it starts the Birch speech, then starts it.
+void CB2_NewGameBirchSpeechAfterSettings(void)
+{
+    SetVBlankCallback(NULL);
+
+    SetGpuReg(REG_OFFSET_DISPCNT, 0);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+
+    DmaFill16(3, 0, (void *)VRAM, VRAM_SIZE);
+    DmaFill32(3, 0, (void *)OAM, OAM_SIZE);
+    DmaFill16(3, 0, (void *)PLTT, PLTT_SIZE);
+
+    ResetPaletteFade();
+    ScanlineEffect_Stop();
+    ResetTasks();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    ResetAllPicSprites();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sMainMenuBgTemplates, ARRAY_COUNT(sMainMenuBgTemplates));
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    DeactivateAllTextPrinters();
+
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+
+    EnableInterrupts(1);
+    SetVBlankCallback(VBlankCB_MainMenu);
+    SetMainCallback2(CB2_MainMenu);
+    CreateTask(Task_NewGameBirchSpeech_Init, 0);
+}
 
 static void Task_NewGameBirchSpeech_Init(u8 taskId)
 {
