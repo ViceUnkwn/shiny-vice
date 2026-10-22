@@ -3,39 +3,46 @@
 #include "event_data.h"
 #include "caps.h"
 #include "pokemon.h"
+#include "shiny_vice_settings.h"
 
 
 u32 GetCurrentLevelCap(void)
 {
-    static const u32 sLevelCapFlagMap[][2] =
+    static const u32 sShinyViceLevelCapFlagMap[][2] =
     {
-        {FLAG_BADGE01_GET, 15},
-        {FLAG_BADGE02_GET, 19},
-        {FLAG_BADGE03_GET, 24},
-        {FLAG_BADGE04_GET, 29},
-        {FLAG_BADGE05_GET, 31},
-        {FLAG_BADGE06_GET, 33},
-        {FLAG_BADGE07_GET, 42},
-        {FLAG_BADGE08_GET, 46},
-        {FLAG_IS_CHAMPION, 58},
+        {FLAG_IS_CHAMPION, 78},
+        {FLAG_BADGE08_GET, 58},
+        {FLAG_BADGE07_GET, 48},
+        {FLAG_BADGE06_GET, 42},
+        {FLAG_BADGE05_GET, 33},
+        {FLAG_BADGE04_GET, 31},
+        {FLAG_BADGE03_GET, 29},
+        {FLAG_BADGE02_GET, 24},
+        {FLAG_BADGE01_GET, 19},
     };
 
     u32 i;
 
-    if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
+    if (ShinyViceSettings_Get()->levelCap == SV_LEVEL_CAP_OFF)
+        return MAX_LEVEL;
+
+    for (i = 0; i < ARRAY_COUNT(sShinyViceLevelCapFlagMap); i++)
     {
-        for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
-        {
-            if (!FlagGet(sLevelCapFlagMap[i][0]))
-                return sLevelCapFlagMap[i][1];
-        }
-    }
-    else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
-    {
-        return VarGet(B_LEVEL_CAP_VARIABLE);
+        if (FlagGet(sShinyViceLevelCapFlagMap[i][0]))
+            return sShinyViceLevelCapFlagMap[i][1];
     }
 
+    // The first cap applies until the first Gym Badge is earned.
+    if (ShinyViceSettings_Get()->levelCap == SV_LEVEL_CAP_SOFT
+     || ShinyViceSettings_Get()->levelCap == SV_LEVEL_CAP_HARD)
+        return 15;
+
     return MAX_LEVEL;
+}
+
+bool32 IsHardLevelCapEnabled(void)
+{
+    return ShinyViceSettings_Get()->levelCap == SV_LEVEL_CAP_HARD;
 }
 
 u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
@@ -45,8 +52,9 @@ u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
 
     u32 levelDifference;
     u32 currentLevelCap = GetCurrentLevelCap();
+    u8 capMode = ShinyViceSettings_Get()->levelCap;
 
-    if (B_EXP_CAP_TYPE == EXP_CAP_NONE)
+    if (capMode == SV_LEVEL_CAP_OFF)
         return expValue;
 
     if (level < currentLevelCap)
@@ -64,11 +72,11 @@ u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
             return expValue;
         }
     }
-    else if (B_EXP_CAP_TYPE == EXP_CAP_HARD)
+    else if (capMode == SV_LEVEL_CAP_HARD)
     {
         return 0;
     }
-    else if (B_EXP_CAP_TYPE == EXP_CAP_SOFT)
+    else if (capMode == SV_LEVEL_CAP_SOFT)
     {
         levelDifference = level - currentLevelCap;
         if (levelDifference > ARRAY_COUNT(sExpScalingDown) - 1)

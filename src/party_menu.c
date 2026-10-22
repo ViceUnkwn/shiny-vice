@@ -5826,10 +5826,23 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
     u8 holdEffectParam = GetItemHoldEffectParam(*itemPtr);
 
     sInitialLevel = GetMonData(mon, MON_DATA_LEVEL);
-    if (!(B_RARE_CANDY_CAP && sInitialLevel >= GetCurrentLevelCap()))
+    if (!(IsHardLevelCapEnabled() && sInitialLevel >= GetCurrentLevelCap()))
     {
         BufferMonStatsToTaskData(mon, arrayPtr);
         cannotUseEffect = ExecuteTableBasedItemEffect(mon, *itemPtr, gPartyMenu.slotId, 0);
+        if (IsHardLevelCapEnabled())
+        {
+            u32 cap = GetCurrentLevelCap();
+            u32 exp = GetMonData(mon, MON_DATA_EXP);
+            u32 capExp = gExperienceTables[gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].growthRate][cap];
+
+            // Rare Candies and EXP Candies may grant more than one level; keep their result at the cap.
+            if (exp > capExp)
+            {
+                SetMonData(mon, MON_DATA_EXP, &capExp);
+                CalculateMonStats(mon);
+            }
+        }
         BufferMonStatsToTaskData(mon, &ptr->data[NUM_STATS]);
     }
     else

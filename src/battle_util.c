@@ -55,6 +55,7 @@
 #include "constants/weather.h"
 #include "constants/pokemon.h"
 #include "test/battle.h"
+#include "shiny_vice_settings.h"
 
 static bool32 TryRemoveScreens(enum BattlerId battler);
 static bool32 IsUnnerveAbilityOnOpposingSide(enum BattlerId battler);
@@ -10847,6 +10848,10 @@ bool32 IsBattlerInvalidForSpreadMove(enum BattlerId battlerAtk, enum BattlerId b
 
 bool32 IsAllowedToUseBag(void)
 {
+    if (ShinyViceSettings_Get()->difficulty == SV_DIFFICULTY_NORMAL
+     && (gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return FALSE;
+
     switch (VarGet(B_VAR_NO_BAG_USE))
     {
     case NO_BAG_RESTRICTION:

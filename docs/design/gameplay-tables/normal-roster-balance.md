@@ -12,7 +12,7 @@ The source of truth is the enabled-family data in `include/config/species_enable
 
 - `src/data/pokemon/species_info/` uses `P_UPDATED_STATS GEN_LATEST`; roster strength review should use those current stats, not old generation stats.
 - `include/config/caps.h` currently selects `LEVEL_CAP_NONE` and `EXP_CAP_NONE`; Rare Candy caps are disabled. The menu's cap choices are not yet an active campaign cap policy.
-- `src/caps.c` has an existing badge-only flag ladder beginning at level 15 before Badge 1. It does not represent the Route 103 rival's level-5 checkpoint or the story-boss cadence in the planning table. Simply enabling the current flag-list mode would therefore not implement the desired milestone system.
+- `src/caps.c` now reads the selected per-save cap policy and the badge-only cap ladder; it no longer depends on compile-time cap configuration. The Trainer Card displays the active mode and level for the local save.
 - `normal-boss-checkpoints.csv` has 24 provisional story and optional checkpoints. Its source ace levels are useful sequencing evidence, but its draft caps and player-access notes are not approved balance decisions.
 - Current wild tables contain Hoenn-map source candidates for 111 families. Direct gift, egg, or static scripts cover 16 families, with some overlap. Another 222 families lack a verified Hoenn campaign acquisition path. These counts describe current source evidence, not final availability.
 - The rebuilt `normal-roster-inputs-733.csv` covers all 733 Dex entries; `normal-roster-inputs-by-form.csv` covers all 1,011 configured species/form IDs. The form input has explicit stats for 950 rows and explicit initializer locations for 965. Remaining macro-backed data are flagged for source/preprocessor review.

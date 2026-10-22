@@ -23,6 +23,7 @@
 #define tMenuSelection  data[0]
 #define tStarterRegion  data[1]
 #define tConfirmed      data[2]
+#define tLevelCap       data[3]
 
 enum
 {
@@ -53,7 +54,7 @@ static void StartFadeOut(u8 taskId, bool8 confirmed);
 static void HighlightRow(u8 row);
 static void DrawHeaderText(void);
 static void DrawRowLabels(void);
-static void DrawRowValue(u8 row, u8 starterRegion);
+static void DrawRowValue(u8 row, u8 starterRegion, u8 levelCap);
 static void DrawBgWindowFrames(void);
 
 static const u16 sMenuText_Pal[] = INCGFX_U16("graphics/interface/option_menu_text.pal", ".gbapal");
@@ -86,6 +87,9 @@ static const u8 sText_Paldea[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}PALDEA");
 
 static const u8 sText_Normal[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL");
 static const u8 sText_HardDisabled[] = _("{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}HARD");
+static const u8 sText_CapOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+static const u8 sText_CapSoft[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SOFT");
+static const u8 sText_CapHard[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");
 static const u8 sText_Soon[]   = _("{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}SOON");
 static const u8 sText_LocksIn[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}LOCKS IN");
 
@@ -245,9 +249,10 @@ void CB2_InitNewGameSettings(void)
         gTasks[taskId].tMenuSelection = ROW_STARTER_REGION;
         gTasks[taskId].tStarterRegion = defaults.starterRegion;
         gTasks[taskId].tConfirmed = FALSE;
+        gTasks[taskId].tLevelCap = defaults.levelCap;
 
         for (row = 0; row < ROW_COUNT; row++)
-            DrawRowValue(row, gTasks[taskId].tStarterRegion);
+            DrawRowValue(row, gTasks[taskId].tStarterRegion, gTasks[taskId].tLevelCap);
         HighlightRow(gTasks[taskId].tMenuSelection);
 
         CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
@@ -270,7 +275,7 @@ static void Task_FadeIn(u8 taskId)
 
 static bool8 IsRowSelectable(u8 row)
 {
-    return row == ROW_STARTER_REGION || row == ROW_START;
+    return row == ROW_STARTER_REGION || row == ROW_LEVEL_CAP || row == ROW_START;
 }
 
 static u8 NextRow(u8 row, s8 direction)
@@ -314,12 +319,14 @@ static void Task_ProcessInput(u8 taskId)
     {
         s8 direction = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
 
-        if (tMenuSelection != ROW_STARTER_REGION)
+        if (tMenuSelection == ROW_STARTER_REGION)
+            tStarterRegion = WrapValue(tStarterRegion, direction, SV_REGION_COUNT);
+        else if (tMenuSelection == ROW_LEVEL_CAP)
+            tLevelCap = WrapValue(tLevelCap, direction, SV_LEVEL_CAP_COUNT);
+        else
             return;
 
-        tStarterRegion = WrapValue(tStarterRegion, direction, SV_REGION_COUNT);
-
-        DrawRowValue(tMenuSelection, tStarterRegion);
+        DrawRowValue(tMenuSelection, tStarterRegion, tLevelCap);
         CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
     }
 }
@@ -335,6 +342,7 @@ static void StartFadeOut(u8 taskId, bool8 confirmed)
 
         ShinyViceSettings_SetDefaults(&settings);
         settings.starterRegion = tStarterRegion;
+        settings.levelCap = tLevelCap;
         ShinyViceSettings_StagePending(&settings);
     }
 
@@ -382,7 +390,7 @@ static void DrawChoice(const u8 *text, u8 x, u8 row, bool8 selected)
     AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, buffer, x, row * 16 + 1, TEXT_SKIP_DRAW, NULL);
 }
 
-static void DrawRowValue(u8 row, u8 starterRegion)
+static void DrawRowValue(u8 row, u8 starterRegion, u8 levelCap)
 {
     // Clear the row's value area first: values change width (for example KANTO -> SINNOH).
     FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), VALUE_X, row * 16, LIST_WIDTH_PX - VALUE_X, 16);
@@ -397,6 +405,10 @@ static void DrawRowValue(u8 row, u8 starterRegion)
         DrawChoice(sText_HardDisabled, GetStringRightAlignXOffset(FONT_NORMAL, sText_HardDisabled, VALUE_RIGHT_X), row, FALSE);
         break;
     case ROW_LEVEL_CAP:
+        DrawChoice(sText_CapOff, VALUE_X, row, levelCap == SV_LEVEL_CAP_OFF);
+        DrawChoice(sText_CapSoft, 132, row, levelCap == SV_LEVEL_CAP_SOFT);
+        DrawChoice(sText_CapHard, 166, row, levelCap == SV_LEVEL_CAP_HARD);
+        break;
     case ROW_GRIND_MODE:
     case ROW_NUZLOCKE:
     case ROW_RANDOMIZER:

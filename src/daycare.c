@@ -334,12 +334,15 @@ static u16 TakeSelectedPokemonFromDaycare(struct DaycareMon *daycareMon)
 
     TryFormChange(&pokemon, FORM_CHANGE_WITHDRAW, B_TRAINER_PLAYER);
 
-    if (GetMonData(&pokemon, MON_DATA_LEVEL) < GetCurrentLevelCap())
+    if (!IsHardLevelCapEnabled() || GetMonData(&pokemon, MON_DATA_LEVEL) < GetCurrentLevelCap())
     {
         experience = GetMonData(&pokemon, MON_DATA_EXP) + daycareMon->steps;
-        u32 maxExp = GetExpAtLevelCap(&pokemon);
-        if (experience > maxExp)
-            experience = maxExp;
+        if (IsHardLevelCapEnabled())
+        {
+            u32 maxExp = GetExpAtLevelCap(&pokemon);
+            if (experience > maxExp)
+                experience = maxExp;
+        }
         SetMonData(&pokemon, MON_DATA_EXP, &experience);
         ApplyDaycareExperience(&pokemon);
     }
@@ -386,8 +389,18 @@ static u8 GetNumLevelsGainedFromSteps(struct DaycareMon *daycareMon)
 
     levelBefore = GetLevelFromBoxMonExp(&daycareMon->mon);
     levelAfter = GetLevelAfterDaycareSteps(&daycareMon->mon, daycareMon->steps);
-    if (levelAfter > GetCurrentLevelCap())
-        levelAfter = GetCurrentLevelCap();
+    if (IsHardLevelCapEnabled())
+    {
+        u32 levelCap = GetCurrentLevelCap();
+
+        if (levelBefore >= levelCap)
+            return 0;
+        if (levelAfter > levelCap)
+            levelAfter = levelCap;
+    }
+
+    if (levelAfter < levelBefore)
+        return 0;
     return levelAfter - levelBefore;
 }
 

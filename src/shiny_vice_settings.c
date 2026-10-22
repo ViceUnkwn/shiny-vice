@@ -12,14 +12,16 @@ void ShinyViceSettings_SetDefaults(struct ShinyViceSettings *settings)
     settings->version = SV_SETTINGS_VERSION;
     settings->starterRegion = SV_REGION_HOENN;
     settings->difficulty = SV_DIFFICULTY_NORMAL;
-    settings->levelCap = SV_LEVEL_CAP_OFF;
+    settings->levelCap = SV_LEVEL_CAP_SOFT;
 }
 
 const struct ShinyViceSettings *ShinyViceSettings_Get(void)
 {
     // A save from before the settings existed has zeroed SaveBlock3 here, so its version is 0.
     if (gSaveBlock3Ptr->svSettings.version != SV_SETTINGS_VERSION
-     || gSaveBlock3Ptr->svSettings.starterRegion >= SV_REGION_COUNT)
+     || gSaveBlock3Ptr->svSettings.starterRegion >= SV_REGION_COUNT
+     || gSaveBlock3Ptr->svSettings.difficulty >= SV_DIFFICULTY_COUNT
+     || gSaveBlock3Ptr->svSettings.levelCap >= SV_LEVEL_CAP_COUNT)
     {
         ShinyViceSettings_SetDefaults(&sDefaultSettings);
         return &sDefaultSettings;
@@ -33,6 +35,8 @@ void ShinyViceSettings_StagePending(const struct ShinyViceSettings *settings)
     sPendingSettings.version = SV_SETTINGS_VERSION;
     if (sPendingSettings.starterRegion >= SV_REGION_COUNT)
         sPendingSettings.starterRegion = SV_REGION_HOENN;
+    if (sPendingSettings.levelCap >= SV_LEVEL_CAP_COUNT)
+        sPendingSettings.levelCap = SV_LEVEL_CAP_SOFT;
     sHasPendingSettings = TRUE;
 }
 

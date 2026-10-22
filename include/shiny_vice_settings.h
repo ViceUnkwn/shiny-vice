@@ -33,8 +33,8 @@ enum SvDifficulty
 enum SvLevelCap
 {
     SV_LEVEL_CAP_OFF,
-    SV_LEVEL_CAP_SOFT, // heavily reduced EXP past the cap
-    SV_LEVEL_CAP_HARD, // no EXP past the cap
+    SV_LEVEL_CAP_SOFT, // battle EXP is reduced above the cap; other leveling is unrestricted
+    SV_LEVEL_CAP_HARD, // no battle EXP or other level gains beyond the cap
     SV_LEVEL_CAP_COUNT,
 };
 

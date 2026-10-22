@@ -27,6 +27,8 @@
 #include "trainer_pokemon_sprites.h"
 #include "contest_util.h"
 #include "decompress.h"
+#include "caps.h"
+#include "shiny_vice_settings.h"
 #include "constants/songs.h"
 #include "constants/game_stat.h"
 #include "constants/battle_frontier.h"
@@ -131,6 +133,7 @@ static void PrintNameOnCardFront(void);
 static void PrintIdOnCard(void);
 static void PrintMoneyOnCard(void);
 static void PrintPokedexOnCard(void);
+static void PrintLevelCapOnCard(void);
 static void PrintProfilePhraseOnCard(void);
 static bool8 PrintAllOnCardBack(void);
 static void PrintNameOnCardBack(void);
@@ -951,6 +954,9 @@ static bool8 PrintAllOnCardFront(void)
         PrintTimeOnCard();
         break;
     case 5:
+        PrintLevelCapOnCard();
+        break;
+    case 6:
         PrintProfilePhraseOnCard();
         break;
     default:
@@ -1104,6 +1110,34 @@ static void PrintPokedexOnCard(void)
         }
         AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, xOffset, top, sTrainerCardTextColors, TEXT_SKIP_DRAW, gStringVar4);
     }
+}
+
+static void PrintLevelCapOnCard(void)
+{
+    static const u8 sText_LevelCap[] = _("LVL CAP ");
+    static const u8 sText_CapOff[] = _("LVL CAP OFF");
+    const struct ShinyViceSettings *settings = ShinyViceSettings_Get();
+    u8 capText[40];
+
+    // The cap is a local single-player rule; remote cards do not represent this save's settings.
+    if (sData->isLink || sData->cardType != CARD_TYPE_EMERALD)
+        return;
+
+    if (settings->levelCap == SV_LEVEL_CAP_OFF)
+    {
+        StringCopy(capText, sText_CapOff);
+    }
+    else
+    {
+        StringCopy(capText, sText_LevelCap);
+        ConvertIntToDecimalStringN(gStringVar1, GetCurrentLevelCap(), STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringAppend(capText, gStringVar1);
+    }
+
+    // Place the compact cap label on the name row, before the trainer portrait.
+    AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_SMALL,
+                                 GetStringRightAlignXOffset(FONT_SMALL, capText, 144),
+                                 33, sTrainerCardTextColors, TEXT_SKIP_DRAW, capText);
 }
 
 static const u8 *const sTimeColonTextColors[] = {sTrainerCardTextColors, sTimeColonInvisibleTextColors};

@@ -1,17 +1,11 @@
 milestone_order,active_cap,applies_from,activation_flag,source_reference,applies_to_checkpoint,optional_fights_at_cap,status,notes
-0,5,New Game,NEW_GAME_DEFAULT,src/new_game.c,Route 103 rival,none,Proposed,Default before any main-path victory flag.
-1,15,After Route 103 rival,FLAG_DEFEATED_RIVAL_ROUTE103,data/maps/Route103/scripts.inc,Roxanne and early Route 104/Rustboro rival,Route 104/Rustboro rival,Proposed,Existing rival victory flag.
-2,19,After Roxanne,FLAG_DEFEATED_RUSTBORO_GYM,data/maps/RustboroCity_Gym/scripts.inc,Brawly,none,Proposed,Existing gym victory flag.
-3,24,After Brawly,FLAG_DEFEATED_DEWFORD_GYM,data/maps/DewfordTown_Gym/scripts.inc,Wattson,Route 110 rival and Mauville Wally,Proposed,The Route 110 rival ace is below this cap.
-4,25,After Wattson,FLAG_DEFEATED_MAUVILLE_GYM,data/maps/MauvilleCity_Gym/scripts.inc,Maxie at Mt. Chimney,none,Proposed,Existing gym victory flag.
-5,29,After Maxie at Mt. Chimney,FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY,data/maps/MtChimney/scripts.inc,Flannery,none,Proposed,Existing story victory flag.
-6,31,After Flannery,FLAG_DEFEATED_LAVARIDGE_GYM,data/maps/LavaridgeTown_Gym/scripts.inc,Norman,none,Proposed,Existing gym victory flag.
-7,33,After Norman,FLAG_DEFEATED_PETALBURG_GYM,data/maps/PetalburgCity_Gym/scripts.inc,Winona,Route 119 rival,Proposed,Existing gym victory flag.
-8,39,After Winona,FLAG_DEFEATED_FORTREE_GYM,data/maps/FortreeCity_Gym/scripts.inc,Maxie at Magma Hideout,Lilycove rival,Proposed,One tier covers the optional Lilycove rival and next required villain boss.
-9,42,After Maxie at Magma Hideout,FLAG_GROUDON_AWAKENED_MAGMA_HIDEOUT,data/maps/MagmaHideout_4F/scripts.inc,Tate and Liza,none,Proposed,Flag is written after the Maxie battle completes.
-10,44,After Tate and Liza,FLAG_DEFEATED_MOSSDEEP_GYM,data/maps/MossdeepCity_Gym/scripts.inc,Maxie at Mossdeep Space Center,none,Proposed,Shared cap tier for the Space Center and Seafloor Cavern sequence.
-11,44,After Maxie at Space Center,FLAG_DEFEATED_MAGMA_SPACE_CENTER,data/maps/MossdeepCity_SpaceCenter_2F/scripts.inc,Archie at Seafloor Cavern,none,Proposed,Same level cap as the preceding checkpoint; no level-cap change between these story fights.
-12,46,After Archie at Seafloor Cavern,FLAG_KYOGRE_ESCAPED_SEAFLOOR_CAVERN,data/maps/SeafloorCavern_Room9/scripts.inc,Juan,none,Proposed,Flag is written after the Archie battle/story sequence.
-13,48,After Juan,FLAG_DEFEATED_SOOTOPOLIS_GYM,data/maps/SootopolisCity_Gym/scripts.inc,Wally at Victory Road,none,Proposed,Existing gym victory flag.
-14,58,After Wally at Victory Road,FLAG_DEFEATED_WALLY_VICTORY_ROAD,data/maps/VictoryRoad_1F/scripts.inc,Elite Four and Wallace,none,Proposed,Shared League cap; E4 source ace levels rise from 49 to 55.
-15,78,After becoming Champion,FLAG_IS_CHAMPION,data/scripts/hall_of_fame.inc,Postgame Steven,optional postgame bosses,Proposed,Postgame tier opens after the Champion; Steven remains optional and does not gate further cap progress.
+0,15,New Game,NEW_GAME_DEFAULT,src/new_game.c,First Gym (Roxanne),Route 103/104 rivals; optional trainers,Wired proposal; validation pending,Starting cap supports the opening routes and first Gym.
+1,19,After Roxanne,FLAG_BADGE01_GET,include/constants/flags.h; src/caps.c,Brawly,Optional Dewford trainers,Wired proposal; validation pending,Only the first badge raises the campaign cap.
+2,24,After Brawly,FLAG_BADGE02_GET,include/constants/flags.h; src/caps.c,Wattson and Route 110 rival,Mauville Wally,Wired proposal; validation pending,Optional rival battles do not alter the cap.
+3,29,After Wattson,FLAG_BADGE03_GET,include/constants/flags.h; src/caps.c,Flannery and Mt. Chimney story boss,Optional trainers,Wired proposal; validation pending,One badge unlock covers the required story before the next Gym.
+4,31,After Flannery,FLAG_BADGE04_GET,include/constants/flags.h; src/caps.c,Norman,Optional trainers,Wired proposal; validation pending,Fourth badge raises the cap for the Petalburg Gym.
+5,33,After Norman,FLAG_BADGE05_GET,include/constants/flags.h; src/caps.c,Winona,Route 119 rival,Wired proposal; validation pending,Optional rival battles do not alter the cap.
+6,42,After Winona,FLAG_BADGE06_GET,include/constants/flags.h; src/caps.c,Tate and Liza; Magma Hideout,Optional Lilycove rival,Wired proposal; validation pending,The sixth badge covers the required story to Mossdeep.
+7,48,After Tate and Liza,FLAG_BADGE07_GET,include/constants/flags.h; src/caps.c,Juan and Seafloor Cavern story,Optional trainers,Wired proposal; validation pending,The seventh badge covers the required story to Sootopolis.
+8,58,After Juan,FLAG_BADGE08_GET,include/constants/flags.h; src/caps.c,Elite Four and Wallace,Optional trainers,Wired proposal; validation pending,All eight badges unlock the League cap.
+9,78,After becoming Champion,FLAG_IS_CHAMPION,include/constants/flags.h; data/scripts/hall_of_fame.inc,Postgame,Optional postgame bosses,Wired proposal; validation pending,Separate postgame cap; not part of badge progression.
