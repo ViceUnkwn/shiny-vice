@@ -385,8 +385,8 @@ static void RollStarterPreviews(void)
     {
         sStarterPersonality[i] = Random32();
         sStarterIsShiny[i] = ComputePlayerShinyOdds(sStarterPersonality[i], READ_OTID_FROM_SAVE);
-        if (sStarterIsShiny[i])
-            sStarterPersonality[i] = ShinyVice_ImproveShinyPersonality(GetStarterPokemon(i), sStarterPersonality[i]);
+        // The nature improvement for shinies is applied once, in CreateBoxMon, when the starter is created.
+        // Starters have no personality-dependent sprite, so the preview does not need it.
     }
 }
 
@@ -394,18 +394,17 @@ static void RollStarterPreviews(void)
 void GiveStarterPokemon(u16 chosenStarterId)
 {
     struct Pokemon mon;
-    bool32 isShiny;
 
     if (chosenStarterId >= STARTER_MON_COUNT)
         chosenStarterId = 0;
 
-    isShiny = sStarterIsShiny[chosenStarterId];
+    // CreateBoxMon takes the preview's shiny result instead of rolling again. It also applies the shiny
+    // nature improvement and shiny ability once, so nothing is repeated here.
+    SetNextPlayerShinyOverride(sStarterIsShiny[chosenStarterId]);
     CreateMon(&mon, GetStarterPokemon(chosenStarterId), 5, sStarterPersonality[chosenStarterId], OTID_STRUCT_PLAYER_ID);
-    // Force the preview's result before the IVs are rolled, so a shiny starter gets the shiny IV bonus.
-    SetMonData(&mon, MON_DATA_IS_SHINY, &isShiny);
+    ClearNextPlayerShinyOverride(); // defensive: nothing should be left pending
+    // IVs are rolled after creation so a shiny starter gets the shiny IV bonus (it reads MON_DATA_IS_SHINY).
     SetBoxMonIVs(&mon.box, USE_RANDOM_IVS);
-    if (isShiny)
-        ShinyVice_RollShinyAbility(&mon.box);
     CalculateMonStats(&mon);
     GiveMonInitialMoveset(&mon);
     GiveScriptedMonToPlayer(&mon, PARTY_SIZE);

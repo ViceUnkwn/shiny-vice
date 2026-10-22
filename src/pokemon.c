@@ -868,8 +868,30 @@ void CreateMonWithIVs(struct Pokemon *mon, enum Species species, u8 level, u32 p
     CalculateMonStats(mon);
 }
 
+// Shiny Vice: lets a caller that already knows a mon's shininess (the starter preview) have the
+// next player-OT creation use that result instead of rolling again. -1 means no override pending.
+static s8 sNextPlayerShinyOverride = -1;
+
+void SetNextPlayerShinyOverride(bool32 isShiny)
+{
+    sNextPlayerShinyOverride = isShiny ? 1 : 0;
+}
+
+void ClearNextPlayerShinyOverride(void)
+{
+    sNextPlayerShinyOverride = -1;
+}
+
 bool32 ComputePlayerShinyOdds(u32 personality, u32 value)
 {
+    if (sNextPlayerShinyOverride >= 0)
+    {
+        bool32 overrideResult = sNextPlayerShinyOverride;
+
+        sNextPlayerShinyOverride = -1; // one-shot
+        return overrideResult;
+    }
+
     if (FlagGet(P_FLAG_FORCE_NO_SHINY))
         return FALSE;
 
