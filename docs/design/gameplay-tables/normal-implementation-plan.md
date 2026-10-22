@@ -1,0 +1,114 @@
+# Shiny Vice Normal implementation plan
+
+**Status:** phased implementation plan. The first starter-set slice is now wired in source; acquisition placements, Normal boss teams, and cap data remain proposals. This document itself contains planning contracts, not runtime code.
+
+## Target outcome
+
+One save stays in the Hoenn region and Emerald story. During New Game setup, the player chooses which of the nine regional starter trios Professor Birch puts in his bag; that choice does not change the game region, professor, maps, or campaign. The save can acquire all 733 enabled National Dex species through Hoenn campaign sources, complete every enabled evolution branch in one save, and support intentional shiny hunts. Normal is the first complete challenge ruleset. It preserves ordinary IVs, EV training, and breeding; Minimal Grinding remains deferred.
+
+The source roster remains `include/config/species_enabled.h` plus the configured species data: 733 Dex species, 346 supported enabled families, and 1,011 configured species/form IDs. The planning inputs are `normal-roster-inputs-733.csv` and `normal-roster-inputs-by-form.csv`.
+
+## Current behavior versus target
+
+| System | Current source behavior | Target in this plan |
+|---|---|---|
+| Starter pool | The New Game menu stages the starter-set selection and the new-save initializer commits it. Birch's chooser resolves the selected trio for each ball; the same slot-specific personality/shiny roll powers the preview and the granted Pokémon. | Keep all 9 trios selectable while the game region and story stay Hoenn. |
+| Rival | Recognized Route 103/110/119, Rustboro, and Lilycove rival trainer variants replace their Hoenn starter species at party generation with the selected-pool counter-pick, evolved to that party slot's level. Other team members remain their existing authored variants. | Keep the same counter-pick at every supported checkpoint; author and balance the complete Normal rival teams separately. |
+| Difficulty | New Game sets engine difficulty to Normal; the menu's stored difficulty is not read. | Normal is fully authored first; Hard is visibly unavailable until its separate contract exists. |
+| Level cap | Save setting is stored, but `B_LEVEL_CAP_TYPE=LEVEL_CAP_NONE` and `B_EXP_CAP_TYPE=EXP_CAP_NONE`, so the menu does not control runtime caps. The built-in flag ladder is badge-only. | Runtime cap policy reads the save choice and the milestone table; the story flags include rival/evil-team progression. |
+| Minimal Grinding | The menu currently stores a toggle, but Normal should retain standard IV/EV growth and breeding. | Hide/disable the unfinished option as Coming Soon; reconsider as a clearly named optional ruleset later. |
+| Acquisition | Existing Hoenn wild data cover 111 families; 16 have scripted-source matches, with overlap; 222 families still lack an audited Hoenn campaign source. | Every enabled species and branch has a same-save Hoenn campaign path with gate and hunt behavior recorded. |
+
+## Decisions to carry into implementation
+
+1. **Starter choice:** keep the current two-step UX. The settings screen chooses a starter set (currently labeled by region); in the Hoenn opening, Birch's bag then contains that set's Grass, Fire, and Water Poké Balls. The player selects one ball; slot IDs stay Grass=0, Fire=1, Water=2. This is a starter-pool choice only: the player, Birch, Brendan/May, maps, and story remain Hoenn.
+2. **Rival counter-pick:** rival slot is `(playerSlot + 1) % 3`, in Grass/Fire/Water order. Species come from the selected starter set at every rival checkpoint. The rival remains Brendan/May in the Hoenn story; other team members are authored in the boss plan and must be obtainable before that checkpoint.
+3. **Normal is the first supported difficulty.** Use the existing `DIFFICULTY_NORMAL` trainer data as the runtime profile and tune its authored trainer records. `NewGameInitData` currently sets engine difficulty to Normal unconditionally and never reads `ShinyViceSettings.difficulty`; wire the selected value through an explicit enum mapping after settings are committed. Keep Hard unavailable/Coming Soon until it has a separate team and rules contract; do not silently map it to Normal.
+4. **Normal preserves standard player growth.** Do not force perfect IVs, remove EVs, alter breeding, or gate normal IV/EV features behind a mode.
+5. **Caps are independent of difficulty.** Off, Soft, and Hard use the same ordered milestone values. Only the growth restriction changes.
+6. **Soft cap behavior:** keep the active cap as the maximum attained level. Award the existing graduated reduced EXP at/above cap and retain progress toward the next level; levels advance when a later milestone raises the cap. Hard cap awards no EXP at/above cap. Off applies neither rule. Rare Candies and Day Care must not push a Pokémon above the active cap in either capped mode; show an unavailable-item response instead of consuming a candy at cap.
+7. **Cap advancement follows main-path victory flags, not optional battles or map entry.** Optional rivals use the current main-path cap and never gate story progression.
+8. **Acquisition means in this Hoenn campaign and on one save.** A source in another expansion region, link trading, or an external distribution does not satisfy coverage. Breeding is a valuable repeatable shiny/IV path, but not the sole way to obtain a family's first parent.
+9. **Forms are tracked separately from the 733 Dex count.** Every enabled regional or alternate form needs an explicit source or in-game form-unlock rule; battle transformations need their intended item/mechanic unlock.
+10. **New Game defaults:** the Hoenn starter trio, Normal difficulty, and Soft cap. Keep Off and Hard caps available as player choices. Hard difficulty and Minimal Grinding are shown as Coming Soon and cannot be selected until implemented.
+
+## Starter and rival implementation contract
+
+The New Game menu stages `starterRegion`, `NewGameInitData` commits it, and `VAR_STARTER_MON` stores the selected slot. Here `starterRegion` means which trio Birch offers, not the region where the adventure takes place. Birch's bag preview and gift now resolve all nine trios from the save setting, preserving the previewed shiny/personality result. Recognized Route 103/110/119, Rustboro, and Lilycove rival trainer variants now replace their Hoenn starter with the same-pool counter-pick and evolve it to the authored party level. Story scripts still branch on Grass/Fire/Water slot for their existing dialogue and variants. The source default cap remains Off; decide the desired default before implementing runtime cap behavior.
+
+Add one canonical 9-by-3 starter table (starter set, slot, species) and helpers to resolve the three Birch bag entries, the selected player starter, and the rival counter-pick. Route the Poké Balls, animated species preview, cry, final `GiveStarterPokemon`, and Pokédex registration through those results. Reuse the existing shiny-in-the-bag roll: selecting a previewed ball must grant that exact rolled Pokémon, including its personality and shiny state, without rerolling at confirmation. The bag must present the chosen trio while all subsequent gameplay remains Emerald/Hoenn.
+
+For rivals, keep authoring in `src/data/trainers.party`. `starter-region-pools.csv` is the canonical 27-choice map; `rival-starter-progression.csv` expands all 27 player choices across the five current rival checkpoints and derives the rival's natural level-based evolution from local species data. The existing trainer variants are keyed by player slot; at battle generation, identify the Hoenn starter-family party member and replace its species with the counter-pick from the selected starter set, evolved to that party member's level. This avoids creating 27 copies of each full rival team. Existing rival records rely on generated level-up moves for these starter slots; review and explicitly author ability/item/IV/EV/moves in the Normal team pass when balance requires it. Leave the other party members in their existing variants until that pass replaces them. Never retain a Hoenn starter's explicit moves on a different starter species.
+
+Before any code, the data audit must identify every starter-related call site: New Game settings, Birch's bag Poké Ball objects and species preview, gift and shiny-roll handoff, Route 103 opening rival, Route 104/Rustboro, Route 110, Route 119, Lilycove, any later rival, and scripts that branch on `VAR_STARTER_MON`. Store the starter-set choice once in save settings; retain the existing slot variable. Clamp invalid save values to the Hoenn starter set and Grass defaults. Do not route to another region or change any Hoenn story script except where the selected species must be read.
+
+## Normal challenge contract
+
+Normal should feel like a prepared boss challenge without making all route trainers boss fights.
+
+| Encounter group | Normal design contract |
+|---|---|
+| Route trainers | Small coherent teams, legible moves, low AI complexity, no required optimal counter. |
+| Rivals / story bosses | Character-led teams; explicit ability, item, nature, moves, IVs/EVs, ace, AI profile; increase complexity by campaign band. |
+| Gyms | Clear type/theme identity with coverage and at least one setup, speed, status, or switching plan appropriate to the badge tier. |
+| Elite Four / Champion | Six-member teams with complementary roles and complete sets. All key items/moves must be accessible before the League. |
+| Optional/postgame | May demand more optimization than mandatory Normal; never controls a main-story cap. |
+
+Use staged trainer optimization: opening teams use low IVs/EVs; early and middle bosses receive moderate, explicit training; late gyms use strong spreads; Elite Four/Champion may use full 31 IVs and deliberate competitive EVs. Do not give every ordinary trainer perfect sets. For every mandatory boss, record the player's pre-fight access envelope (species/evolution, moves, abilities, held items, healing, current cap) and verify at least three viable preparation approaches. This protects players who do not IV/EV optimize while giving breeders meaningful upgrades.
+
+Normal should use Set battle style and disable Bag use in trainer battles, matching the documented Imperium Normal baseline and making the challenge contract consistent. Keep field healing and player inventory access between battles. Show these rules in the New Game confirmation/help text so the player knows before starting. Do not make Easy/Hard mode assumptions part of Normal; difficulty, cap policy, and IV/EV rules stay separate settings.
+
+## Cap values and transitions
+
+Use [normal-cap-milestones.csv](normal-cap-milestones.csv) as the initial cap table. The active value is the next main checkpoint's ace level, from the current source teams. Optional rivals fall under that active cap and do not advance it. League uses one shared cap of 58; the postgame tier of 78 opens after becoming Champion for optional postgame battles. New games default to Soft; Off and Hard remain explicit player choices.
+
+The table uses existing persistent victory flags wherever available. Derive the active milestone by scanning the ordered activation rows and retaining the latest reached cap; the main-path flags are monotonic. For each source row, confirm the flag is set only after the win and is not cleared/reused during the campaign. Use a new named flag only if a checkpoint lacks a suitable one. Do not make `GetCurrentLevelCap()` return a capped value when the save setting is Off.
+
+Current source behavior in this checkout matters: `TryIncrementMonLevel` blocks levels above `GetCurrentLevelCap()` even for Soft, and Day Care also clamps to that value. Soft currently changes awarded EXP, not the level ceiling. Preserve that ceiling for Soft; fix candy behavior so the UI never consumes a candy that cannot raise the Pokémon. Implement the policy per-save in the cap functions, because `B_LEVEL_CAP_TYPE`, `B_EXP_CAP_TYPE`, and `B_RARE_CANDY_CAP` are compile-time switches and cannot express the New Game menu selection by themselves.
+
+## Acquisition data required before implementation
+
+Keep four related, normalized planning views and derive summaries from them:
+
+1. **Dex acquisition ledger (733 rows):** target Dex species, family, direct source or pre-evolution path, source method, exact map/NPC/item, level/rate, first story window, repeat/reset behavior, shiny lock, evidence file/line, and status.
+2. **Line completion ledger (733 rows):** each species' access mode (direct, evolution, item/trade alternative, fossil, gift, shop, egg), exact predecessor/requirements, first reachable window, and one-save proof. Branch evolutions are separate rows.
+3. **Form unlock ledger (1,011 rows):** exact configured species/form ID, form category, source/unlock condition, region or held item, repeatability, and shiny behavior. A form ID with no separate acquisition because it is a battle transformation must name its enabling mechanic.
+4. **Source ledger (one row per actual source):** source ID, target(s), map/event/shop, method, ordered slot and weight/rate, level range, prerequisite flag/map gate, repeatability/reset, shiny behavior, and source reference. Distinguish current source evidence from proposed placement.
+
+Design rule: every enabled family receives one first-access plan; every one of its NatDex species and branches receives a completion path. Wild repeatable routes are the default. Use gifts/statics, eggs, trades with an in-game alternative, shops, fossils, and postgame quests when they create a better hunt or fit the species. Spread 733 species through Hoenn habitats rather than adding all generations to every route. Route/method/level/slot weights remain individually reviewable in the authored `src/data/wild_encounters.json`, following Imperium's map-first structure.
+
+Before placement is approved, verify map reachability from the actual Hoenn story, event flags, field-move gates, intended catch levels, and whether a source is repeatable. The current 111-family wild count and scripted-source matches are evidence to audit, not final availability. All sources on non-Hoenn expansion maps must be excluded unless the campaign intentionally opens those maps.
+
+## Boss and cap authoring contract
+
+Keep `normal-boss-checkpoints.csv` as the ordered encounter index. Split out a proposed per-mon planning table with one row per party slot: checkpoint ID, trainer ID, slot, species, level, ability, item, nature, IVs, EVs, four moves, role, AI tier, source-vs-proposal status, and pre-boss access proof. Source parties stay in `src/data/trainers.party`; generated `src/data/trainers.h` is never hand-edited. Assign each ordinary trainer and boss an explicit AI tier instead of making every trainer equally strong.
+
+At each main-path victory, advance the cap to the next row in `normal-cap-milestones.csv`. Do not increment on `FLAG_DEFEATED_RIVAL_ROUTE_104`, Route 110/119/Lilycove optional rival battles, or optional Mauville Wally. If any of these encounters becomes mandatory by design, explicitly promote it in the checkpoint index and give it a post-victory trigger.
+
+## Build phases and completion gates
+
+The phases below turn the design into a vertical-slice roadmap. The roster inventories, starter pool, rival progression, boss order, and cap draft already exist. Phases 1 and 2 are wired; the rival starter replacement for phase 3 is implemented for the current rival trainer groups, with full data-matrix and emulator validation still outstanding. Next, complete phase 3 validation and author the Normal rival teams. Remaining source audits and acquisition placements are completed in campaign bands, so starter implementation does not need to wait on all 733 acquisition decisions. Each band's boss sets are finalized only after its pre-fight access envelope is reviewed.
+
+| Phase | Scope and deliverables | Complete when |
+|---|---|---|
+| 0. Baseline and save contract | Freeze the enabled roster snapshot and existing shiny starter behavior. Document the menu's staged-versus-committed settings, save defaults, field meanings, and which controls are active. Keep incomplete options visibly unavailable. Maintain the 733 Dex, 346 family, 1,011 form, 27 starter, 135 rival-row, 25 boss, and 16 cap inventories as source-backed inputs. | Settings cannot imply unsupported gameplay; the current custom shiny roll and save format are understood; each planning row is evidence-backed or explicitly marked proposed/open. |
+| 1. New Game settings shell — implemented | The menu accepts the starter-set selection, starts/cancels predictably, commits it into the new save, and keeps unfinished choices unavailable. Normal is displayed as the supported difficulty; cap options, Minimal Grinding, Nuzlocke, and Randomizer remain Coming Soon. | Starter-set value persists into Birch's flow; disabled options cannot be selected. |
+| 2. Birch's starter-bag slice — implemented | All 9 starter sets resolve into Grass/Fire/Water choices with matching preview, cry, label, and gift. Each ball's custom shiny/personality roll is preserved through selection. The adventure remains in Hoenn/Emerald. | Code paths share the same selected species and shiny/personality roll from preview through gift. Emulator playthrough validation remains. |
+| 3. Hoenn rival starter slice — first implementation landed | Recognized Route 103/110/119, Rustboro, and Lilycove rival parties counter-pick from the saved trio and evolve the selected species to the party member's level. Other party members remain existing authored variants. | Source logic covers the five checkpoint groups; validate all 27 inputs against the 135-row progression table, then author and balance complete Normal teams. |
+| 4. Normal rules runtime | Make Normal the actual trainer profile and implement its published contract: Set battle style, no Bag during trainer battles, staged trainer AI/team complexity, and standard player IVs/EVs/breeding. Keep Hard unavailable until it has its own reviewed profile; defer Minimal Grinding. | A new Normal save receives the documented rules; route trainers remain below boss intensity; no player IV/EV or breeding behavior is silently altered. |
+| 5. Per-save level caps | Implement Off/Soft/Hard policy separately from the cap milestone table. Set the proposed default to Soft after validating the value against the user-facing menu. Wire story-victory flags, EXP policy, level-up checks, Rare Candy feedback, and Day Care behavior. | Every milestone activates after the intended win; optional battles do not advance caps; Soft/Hard/Off and item behavior match the documented contract. |
+| 6. Opening Hoenn access-and-boss slice | Complete source/story gates for the opening routes through the first gyms and early story boss. Plan the obtainable families, catch levels/rates, evolution/item/move access, and shiny-hunt repeatability before authoring Normal teams. Author party-slot rows and access envelopes, then implement the approved encounter and trainer data for this band. | The opening roster has multiple viable non-starter choices; each opening boss has at least three plausible preparation approaches and no unavailable counter is assumed. |
+| 7. Campaign-band acquisition and boss rollout | Repeat the same data-first loop for badges 3–5, badges 6–8, then the League: acquisition source ledger, one-save evolution/branch paths, map/story gates, hunt behavior, boss teams, cap checkpoint, then source implementation. Add gifts, eggs, trade alternatives, shops, fossils, and events where they fit better than wild slots. | Each band is internally complete before implementation; all 733 Dex species and every enabled evolution branch have same-save paths by the end; all mandatory teams use only pre-fight access. |
+| 8. Forms, legends, and postgame | Resolve all 1,011 configured form IDs into direct acquisition, evolution, item/mechanic unlock, or an explicit battle-only disposition. Design late legendary/mythical/Paradox and special-form access, repeat/reset options, shiny-lock status, and postgame quests. Keep optional bosses and postgame caps outside main-story progression. | Every form has a documented disposition; all 346 enabled families are obtainable in one save; any one-time shiny-locked static has another intended hunt path where feasible. |
+| 9. Campaign balance and release readiness | Review route-trainer density, boss/ace levels, cap transitions, move/item availability, EXP pace, breeding and EV value, shiny hunt loops, and party composition across a full Hoenn campaign. Build/boot and perform end-to-end playthrough checks at starter, cap, badge, League, and postgame boundaries. | A full campaign can be completed with normal IV/EV rules and no access softlocks; Normal challenges preparation without a single mandatory species; generated data and source tables agree. |
+| 10. Deferred options and QoL | After Normal and roster availability are stable, prioritize the remaining QoL requests. Consider a clearly named Minimal Grinding option only if desired; keep its perfect-IV/no-EV behavior separate from standard Normal. Design Nuzlocke and Randomizer as separate future projects with their own save, battle, and data contracts. | Each later option has a written behavior contract and can be enabled without changing the Normal baseline or shiny-hunting guarantees. |
+
+Implementation should follow Imperium's useful separation: map-first wild source data, authored trainer parties, explicit encounter AI/boss policy, and cap progression as an independent milestone system. Its Normal Set/no-Bag behavior is the selected Shiny Vice starting contract; specific teams, encounter placements, cap semantics, and Shiny Vice shiny-hunt guarantees remain project decisions. See [imperium-source-review.md](imperium-source-review.md).
+
+## Known implementation surfaces
+
+- Settings staging/persistence: `src/new_game_settings_screen.c`, `src/shiny_vice_settings.c`, `include/shiny_vice_settings.h`, `src/new_game.c`, `include/global.h`.
+- Player starter selector and species gift: `src/starter_choose.c`; opening story scripts and rival branches: `data/maps/Route103/scripts.inc`, `Route104`, `RustboroCity`, `Route110`, `Route119`, `LilycoveCity`.
+- Trainer records and generation: `src/data/trainers.party` → generated `src/data/trainers.h`; trainer difficulty lookup in `src/difficulty.c` and `src/data.c`.
+- Runtime cap integration: `include/config/caps.h`, `src/caps.c`, plus level-up/candy/Day Care call sites in `src/pokemon.c`, `src/party_menu.c`, and `src/daycare.c`.
+- Wild authoring: `src/data/wild_encounters.json` → generated encounter data; gifts/static events remain in map scripts and source item/shop tables.

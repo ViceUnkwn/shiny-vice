@@ -22,10 +22,7 @@
 
 #define tMenuSelection  data[0]
 #define tStarterRegion  data[1]
-#define tDifficulty     data[2]
-#define tLevelCap       data[3]
-#define tGrindMode      data[4]
-#define tConfirmed      data[5]
+#define tConfirmed      data[2]
 
 enum
 {
@@ -56,7 +53,7 @@ static void StartFadeOut(u8 taskId, bool8 confirmed);
 static void HighlightRow(u8 row);
 static void DrawHeaderText(void);
 static void DrawRowLabels(void);
-static void DrawRowValue(u8 row, const s16 *data);
+static void DrawRowValue(u8 row, u8 starterRegion);
 static void DrawBgWindowFrames(void);
 
 static const u16 sMenuText_Pal[] = INCGFX_U16("graphics/interface/option_menu_text.pal", ".gbapal");
@@ -69,7 +66,7 @@ static const u8 *const sRowLabels[ROW_COUNT] =
     [ROW_STARTER_REGION] = COMPOUND_STRING("STARTERS"),
     [ROW_DIFFICULTY]     = COMPOUND_STRING("DIFFICULTY"),
     [ROW_LEVEL_CAP]      = COMPOUND_STRING("LEVEL CAP"),
-    [ROW_GRIND_MODE]     = COMPOUND_STRING("GRIND MODE"),
+    [ROW_GRIND_MODE]     = COMPOUND_STRING("MIN GRINDING"),
     [ROW_NUZLOCKE]       = COMPOUND_STRING("NUZLOCKE"),
     [ROW_RANDOMIZER]     = COMPOUND_STRING("RANDOMIZER"),
     [ROW_START]          = COMPOUND_STRING("START GAME"),
@@ -88,11 +85,8 @@ static const u8 sText_Galar[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}GALAR");
 static const u8 sText_Paldea[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}PALDEA");
 
 static const u8 sText_Normal[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL");
-static const u8 sText_Hard[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");
-static const u8 sText_Off[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 sText_Soft[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SOFT");
-static const u8 sText_On[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 sText_Soon[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SOON");
+static const u8 sText_HardDisabled[] = _("{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}HARD");
+static const u8 sText_Soon[]   = _("{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}SOON");
 static const u8 sText_LocksIn[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}LOCKS IN");
 
 static const u8 *const sRegionTexts[SV_REGION_COUNT] =
@@ -106,25 +100,6 @@ static const u8 *const sRegionTexts[SV_REGION_COUNT] =
     [SV_REGION_ALOLA]  = sText_Alola,
     [SV_REGION_GALAR]  = sText_Galar,
     [SV_REGION_PALDEA] = sText_Paldea,
-};
-
-static const u8 *const sDifficultyTexts[SV_DIFFICULTY_COUNT] =
-{
-    [SV_DIFFICULTY_NORMAL] = sText_Normal,
-    [SV_DIFFICULTY_HARD]   = sText_Hard,
-};
-
-static const u8 *const sLevelCapTexts[SV_LEVEL_CAP_COUNT] =
-{
-    [SV_LEVEL_CAP_OFF]  = sText_Off,
-    [SV_LEVEL_CAP_SOFT] = sText_Soft,
-    [SV_LEVEL_CAP_HARD] = sText_Hard,
-};
-
-static const u8 *const sOffOnTexts[2] =
-{
-    sText_Off,
-    sText_On,
 };
 
 // Same window and background layout as the Options menu.
@@ -263,21 +238,17 @@ void CB2_InitNewGameSettings(void)
     case 9:
     {
         u8 taskId = CreateTask(Task_FadeIn, 0);
-        s16 *data = gTasks[taskId].data;
         struct ShinyViceSettings defaults;
         u8 row;
 
         ShinyViceSettings_SetDefaults(&defaults);
-        tMenuSelection = ROW_STARTER_REGION;
-        tStarterRegion = defaults.starterRegion;
-        tDifficulty = defaults.difficulty;
-        tLevelCap = defaults.levelCap;
-        tGrindMode = defaults.grindMode;
-        tConfirmed = FALSE;
+        gTasks[taskId].tMenuSelection = ROW_STARTER_REGION;
+        gTasks[taskId].tStarterRegion = defaults.starterRegion;
+        gTasks[taskId].tConfirmed = FALSE;
 
         for (row = 0; row < ROW_COUNT; row++)
-            DrawRowValue(row, data);
-        HighlightRow(tMenuSelection);
+            DrawRowValue(row, gTasks[taskId].tStarterRegion);
+        HighlightRow(gTasks[taskId].tMenuSelection);
 
         CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
         gMain.state++;
@@ -299,7 +270,7 @@ static void Task_FadeIn(u8 taskId)
 
 static bool8 IsRowSelectable(u8 row)
 {
-    return row != ROW_NUZLOCKE && row != ROW_RANDOMIZER;
+    return row == ROW_STARTER_REGION || row == ROW_START;
 }
 
 static u8 NextRow(u8 row, s8 direction)
@@ -343,25 +314,12 @@ static void Task_ProcessInput(u8 taskId)
     {
         s8 direction = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
 
-        switch (tMenuSelection)
-        {
-        case ROW_STARTER_REGION:
-            tStarterRegion = WrapValue(tStarterRegion, direction, SV_REGION_COUNT);
-            break;
-        case ROW_DIFFICULTY:
-            tDifficulty = WrapValue(tDifficulty, direction, SV_DIFFICULTY_COUNT);
-            break;
-        case ROW_LEVEL_CAP:
-            tLevelCap = WrapValue(tLevelCap, direction, SV_LEVEL_CAP_COUNT);
-            break;
-        case ROW_GRIND_MODE:
-            tGrindMode ^= 1;
-            break;
-        default:
+        if (tMenuSelection != ROW_STARTER_REGION)
             return;
-        }
 
-        DrawRowValue(tMenuSelection, data);
+        tStarterRegion = WrapValue(tStarterRegion, direction, SV_REGION_COUNT);
+
+        DrawRowValue(tMenuSelection, tStarterRegion);
         CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
     }
 }
@@ -377,9 +335,6 @@ static void StartFadeOut(u8 taskId, bool8 confirmed)
 
         ShinyViceSettings_SetDefaults(&settings);
         settings.starterRegion = tStarterRegion;
-        settings.difficulty = tDifficulty;
-        settings.levelCap = tLevelCap;
-        settings.grindMode = tGrindMode;
         ShinyViceSettings_StagePending(&settings);
     }
 
@@ -427,26 +382,7 @@ static void DrawChoice(const u8 *text, u8 x, u8 row, bool8 selected)
     AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, buffer, x, row * 16 + 1, TEXT_SKIP_DRAW, NULL);
 }
 
-// Lays 2 or 3 choices out across the value area: first at the left, last at the right, a third centred.
-static void DrawChoiceRow(u8 row, const u8 *const *texts, u8 count, u8 selected)
-{
-    u8 i;
-    u8 x;
-
-    for (i = 0; i < count; i++)
-    {
-        if (i == 0)
-            x = VALUE_X;
-        else if (i == count - 1)
-            x = GetStringRightAlignXOffset(FONT_NORMAL, texts[i], VALUE_RIGHT_X);
-        else
-            x = VALUE_X + (VALUE_RIGHT_X - VALUE_X - GetStringWidth(FONT_NORMAL, texts[i], 0)) / 2;
-
-        DrawChoice(texts[i], x, row, i == selected);
-    }
-}
-
-static void DrawRowValue(u8 row, const s16 *data)
+static void DrawRowValue(u8 row, u8 starterRegion)
 {
     // Clear the row's value area first: values change width (for example KANTO -> SINNOH).
     FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), VALUE_X, row * 16, LIST_WIDTH_PX - VALUE_X, 16);
@@ -454,17 +390,14 @@ static void DrawRowValue(u8 row, const s16 *data)
     switch (row)
     {
     case ROW_STARTER_REGION:
-        DrawChoice(sRegionTexts[tStarterRegion], VALUE_X, row, TRUE);
+        DrawChoice(sRegionTexts[starterRegion], VALUE_X, row, TRUE);
         break;
     case ROW_DIFFICULTY:
-        DrawChoiceRow(row, sDifficultyTexts, SV_DIFFICULTY_COUNT, tDifficulty);
+        DrawChoice(sText_Normal, VALUE_X, row, TRUE);
+        DrawChoice(sText_HardDisabled, GetStringRightAlignXOffset(FONT_NORMAL, sText_HardDisabled, VALUE_RIGHT_X), row, FALSE);
         break;
     case ROW_LEVEL_CAP:
-        DrawChoiceRow(row, sLevelCapTexts, SV_LEVEL_CAP_COUNT, tLevelCap);
-        break;
     case ROW_GRIND_MODE:
-        DrawChoiceRow(row, sOffOnTexts, ARRAY_COUNT(sOffOnTexts), tGrindMode);
-        break;
     case ROW_NUZLOCKE:
     case ROW_RANDOMIZER:
         DrawChoice(sText_Soon, VALUE_X, row, FALSE);

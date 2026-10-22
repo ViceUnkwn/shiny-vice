@@ -2254,24 +2254,126 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     Free(trainerGen);
 }
 
-static void CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum)
+#define SV_STARTER_COUNT 3
+
+static bool8 IsRivalStarterVariant(u16 trainerId)
 {
-    if (!GetTrainerStructFromId(trainerNum)->overrideTrainer)
+    if (trainerId >= TRAINER_BRENDAN_ROUTE_103_MUDKIP && trainerId <= TRAINER_MAY_ROUTE_119_TORCHIC)
+        return TRUE;
+
+    switch (trainerId)
     {
-        CreateNPCTrainerPartyFromTrainer(party, GetTrainerStructFromId(trainerNum));
-        return;
+    case TRAINER_BRENDAN_RUSTBORO_TREECKO:
+    case TRAINER_BRENDAN_RUSTBORO_MUDKIP:
+    case TRAINER_BRENDAN_RUSTBORO_TORCHIC:
+    case TRAINER_MAY_RUSTBORO_MUDKIP:
+    case TRAINER_MAY_RUSTBORO_TREECKO:
+    case TRAINER_MAY_RUSTBORO_TORCHIC:
+    case TRAINER_BRENDAN_LILYCOVE_MUDKIP:
+    case TRAINER_BRENDAN_LILYCOVE_TREECKO:
+    case TRAINER_BRENDAN_LILYCOVE_TORCHIC:
+    case TRAINER_MAY_LILYCOVE_MUDKIP:
+    case TRAINER_MAY_LILYCOVE_TREECKO:
+    case TRAINER_MAY_LILYCOVE_TORCHIC:
+        return TRUE;
     }
 
-    struct Trainer tempTrainer;
-    memcpy(&tempTrainer, GetTrainerStructFromId(trainerNum), sizeof(struct Trainer));
-    const struct Trainer *origTrainer = GetTrainerStructFromId(tempTrainer.overrideTrainer);
+    return FALSE;
+}
 
-    tempTrainer.party = origTrainer->party;
+static u8 FindHoennStarterPartyIndex(const struct TrainerMon *party, u8 partySize)
+{
+    u8 i;
 
-    tempTrainer.poolSize = origTrainer->poolSize;
-    if (tempTrainer.partySize == 0)
-        tempTrainer.partySize = origTrainer->partySize;
-    CreateNPCTrainerPartyFromTrainer(party, (const struct Trainer *)(&tempTrainer));
+    for (i = 0; i < partySize; i++)
+    {
+        enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(party[i].species);
+
+        if (dexNum == NATIONAL_DEX_TREECKO || dexNum == NATIONAL_DEX_TORCHIC || dexNum == NATIONAL_DEX_MUDKIP)
+            return i;
+    }
+
+    return partySize;
+}
+
+static enum Species GetStarterSpeciesAtLevel(enum Species species, u8 level)
+{
+    u8 stage;
+
+    // Starter lines have at most two level-based evolutions. Use the source evolution data so rival
+    // stages follow the selected species' actual level requirements.
+    for (stage = 0; stage < 2; stage++)
+    {
+        const struct Evolution *evolutions = GetSpeciesEvolutions(species);
+        enum Species nextSpecies = SPECIES_NONE;
+        u16 i;
+
+        for (i = 0; evolutions[i].method != EVOLUTIONS_END; i++)
+        {
+            if (evolutions[i].method == EVO_LEVEL && evolutions[i].param <= level)
+            {
+                nextSpecies = evolutions[i].targetSpecies;
+                break;
+            }
+        }
+
+        if (nextSpecies == SPECIES_NONE)
+            break;
+        species = nextSpecies;
+    }
+
+    return species;
+}
+
+static void CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum)
+{
+    const struct Trainer *trainer = GetTrainerStructFromId(trainerNum);
+    struct Trainer overrideTrainer;
+    struct Trainer trainerWithSelectedStarter;
+    struct TrainerMon rivalParty[PARTY_SIZE];
+
+    if (trainer->overrideTrainer)
+    {
+        const struct Trainer *origTrainer;
+
+        overrideTrainer = *trainer;
+        origTrainer = GetTrainerStructFromId(overrideTrainer.overrideTrainer);
+        overrideTrainer.party = origTrainer->party;
+        overrideTrainer.poolSize = origTrainer->poolSize;
+        if (overrideTrainer.partySize == 0)
+            overrideTrainer.partySize = origTrainer->partySize;
+        trainer = &overrideTrainer;
+    }
+
+    if (IsRivalStarterVariant(trainerNum) && trainer->party != NULL)
+    {
+        u8 partySize = trainer->partySize;
+        u8 starterPartyIndex;
+
+        if (partySize > PARTY_SIZE)
+            partySize = PARTY_SIZE;
+        memcpy(rivalParty, trainer->party, partySize * sizeof(rivalParty[0]));
+        starterPartyIndex = FindHoennStarterPartyIndex(rivalParty, partySize);
+        if (starterPartyIndex < partySize)
+        {
+            u8 playerStarterSlot = VarGet(VAR_STARTER_MON);
+            enum Species rivalStarter;
+
+            if (playerStarterSlot >= SV_STARTER_COUNT)
+                playerStarterSlot = 0;
+            rivalStarter = GetStarterPokemon((playerStarterSlot + 1) % SV_STARTER_COUNT);
+            rivalParty[starterPartyIndex].species = GetStarterSpeciesAtLevel(rivalStarter, rivalParty[starterPartyIndex].lvl);
+            rivalParty[starterPartyIndex].ability = ABILITY_NONE;
+            for (u8 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+                rivalParty[starterPartyIndex].moves[moveIndex] = MOVE_NONE;
+
+            trainerWithSelectedStarter = *trainer;
+            trainerWithSelectedStarter.party = rivalParty;
+            trainer = &trainerWithSelectedStarter;
+        }
+    }
+
+    CreateNPCTrainerPartyFromTrainer(party, trainer);
 }
 
 void CreateTrainerPartyForPlayer(void)

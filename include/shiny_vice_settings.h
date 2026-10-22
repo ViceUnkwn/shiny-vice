@@ -8,6 +8,7 @@
 
 #define SV_SETTINGS_VERSION 1
 
+// This chooses the starter trio offered by Professor Birch; it never changes the game region.
 enum SvStarterRegion
 {
     SV_REGION_HOENN,
@@ -40,7 +41,7 @@ enum SvLevelCap
 struct ShinyViceSettings
 {
     u8 version;       // SV_SETTINGS_VERSION; 0 means the save predates the settings (use defaults)
-    u8 starterRegion; // enum SvStarterRegion
+    u8 starterRegion; // enum SvStarterRegion; which trio Birch offers
     u8 difficulty;    // enum SvDifficulty
     u8 levelCap;      // enum SvLevelCap
     u8 grindMode:1;   // minimal grind: stats computed with 31 IVs, no EV gain (stored values untouched)

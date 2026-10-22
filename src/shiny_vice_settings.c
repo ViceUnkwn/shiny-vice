@@ -18,7 +18,8 @@ void ShinyViceSettings_SetDefaults(struct ShinyViceSettings *settings)
 const struct ShinyViceSettings *ShinyViceSettings_Get(void)
 {
     // A save from before the settings existed has zeroed SaveBlock3 here, so its version is 0.
-    if (gSaveBlock3Ptr->svSettings.version != SV_SETTINGS_VERSION)
+    if (gSaveBlock3Ptr->svSettings.version != SV_SETTINGS_VERSION
+     || gSaveBlock3Ptr->svSettings.starterRegion >= SV_REGION_COUNT)
     {
         ShinyViceSettings_SetDefaults(&sDefaultSettings);
         return &sDefaultSettings;
@@ -30,6 +31,8 @@ void ShinyViceSettings_StagePending(const struct ShinyViceSettings *settings)
 {
     sPendingSettings = *settings;
     sPendingSettings.version = SV_SETTINGS_VERSION;
+    if (sPendingSettings.starterRegion >= SV_REGION_COUNT)
+        sPendingSettings.starterRegion = SV_REGION_HOENN;
     sHasPendingSettings = TRUE;
 }
 

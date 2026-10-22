@@ -13,6 +13,7 @@
 #include "random.h"
 #include "shiny_quality.h"
 #include "scanline_effect.h"
+#include "shiny_vice_settings.h"
 #include "sound.h"
 #include "sprite.h"
 #include "starter_choose.h"
@@ -117,15 +118,22 @@ static const u8 sStarterLabelCoords[STARTER_MON_COUNT][2] =
     {8, 4},
 };
 
-#define GRASS_STARTER (IS_FRLG ? SPECIES_BULBASAUR  : SPECIES_TREECKO)
-#define FIRE_STARTER  (IS_FRLG ? SPECIES_CHARMANDER : SPECIES_TORCHIC)
-#define WATER_STARTER (IS_FRLG ? SPECIES_SQUIRTLE   : SPECIES_MUDKIP )
-
-static const u16 sStarterMon[STARTER_MON_COUNT] =
+// This setting selects only which trio Birch offers. The adventure remains in Hoenn.
+static const u16 sStarterMon[SV_REGION_COUNT][STARTER_MON_COUNT] =
 {
-    GRASS_STARTER,
-    FIRE_STARTER,
-    WATER_STARTER,
+    [SV_REGION_HOENN] = {
+        IS_FRLG ? SPECIES_BULBASAUR : SPECIES_TREECKO,
+        IS_FRLG ? SPECIES_CHARMANDER : SPECIES_TORCHIC,
+        IS_FRLG ? SPECIES_SQUIRTLE : SPECIES_MUDKIP,
+    },
+    [SV_REGION_KANTO] = {SPECIES_BULBASAUR, SPECIES_CHARMANDER, SPECIES_SQUIRTLE},
+    [SV_REGION_JOHTO] = {SPECIES_CHIKORITA, SPECIES_CYNDAQUIL, SPECIES_TOTODILE},
+    [SV_REGION_SINNOH] = {SPECIES_TURTWIG, SPECIES_CHIMCHAR, SPECIES_PIPLUP},
+    [SV_REGION_UNOVA] = {SPECIES_SNIVY, SPECIES_TEPIG, SPECIES_OSHAWOTT},
+    [SV_REGION_KALOS] = {SPECIES_CHESPIN, SPECIES_FENNEKIN, SPECIES_FROAKIE},
+    [SV_REGION_ALOLA] = {SPECIES_ROWLET, SPECIES_LITTEN, SPECIES_POPPLIO},
+    [SV_REGION_GALAR] = {SPECIES_GROOKEY, SPECIES_SCORBUNNY, SPECIES_SOBBLE},
+    [SV_REGION_PALDEA] = {SPECIES_SPRIGATITO, SPECIES_FUECOCO, SPECIES_QUAXLY},
 };
 
 static const struct BgTemplate sBgTemplates[3] =
@@ -356,9 +364,15 @@ static const struct SpriteTemplate sSpriteTemplate_StarterCircle =
 // .text
 u16 GetStarterPokemon(u16 chosenStarterId)
 {
-    if (chosenStarterId > STARTER_MON_COUNT)
+    const struct ShinyViceSettings *settings = ShinyViceSettings_Get();
+    u8 starterRegion = settings->starterRegion;
+
+    if (chosenStarterId >= STARTER_MON_COUNT)
         chosenStarterId = 0;
-    return sStarterMon[chosenStarterId];
+    if (starterRegion >= SV_REGION_COUNT)
+        starterRegion = SV_REGION_HOENN;
+
+    return sStarterMon[starterRegion][chosenStarterId];
 }
 
 static void VblankCB_StarterChoose(void)
