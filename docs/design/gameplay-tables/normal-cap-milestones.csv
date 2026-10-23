@@ -1,7 +1,7 @@
 milestone_order,active_cap,applies_from,activation_flag,source_reference,applies_to_checkpoint,optional_fights_at_cap,status,notes
 0,15,New Game,NEW_GAME_DEFAULT,src/new_game.c,First Gym (Roxanne),Route 103/104 rivals; optional trainers,Wired proposal; validation pending,Starting cap supports the opening routes and first Gym.
 1,19,After Roxanne,FLAG_BADGE01_GET,include/constants/flags.h; src/caps.c,Brawly,Optional Dewford trainers,Wired proposal; validation pending,Only the first badge raises the campaign cap.
-2,24,After Brawly,FLAG_BADGE02_GET,include/constants/flags.h; src/caps.c,Wattson and Route 110 rival,Mauville Wally,Wired proposal; validation pending,Optional rival battles do not alter the cap.
+2,24,After Brawly or Slateport Oceanic Museum story,FLAG_BADGE02_GET or FLAG_DELIVERED_DEVON_GOODS,include/constants/flags.h; data/maps/SlateportCity_OceanicMuseum_2F/scripts.inc; src/caps.c,Wattson and Route 110 rival,Mauville Wally,Implemented; build/gameplay validation pending,Completing the museum Aqua event sets FLAG_DELIVERED_DEVON_GOODS before Route 110. This raises the cap to 24 for players who skipped Brawly; Brawly's badge reaches the same cap.
 3,29,After Wattson,FLAG_BADGE03_GET,include/constants/flags.h; src/caps.c,Flannery and Mt. Chimney story boss,Optional trainers,Wired proposal; validation pending,One badge unlock covers the required story before the next Gym.
 4,31,After Flannery,FLAG_BADGE04_GET,include/constants/flags.h; src/caps.c,Norman,Optional trainers,Wired proposal; validation pending,Fourth badge raises the cap for the Petalburg Gym.
 5,33,After Norman,FLAG_BADGE05_GET,include/constants/flags.h; src/caps.c,Winona,Route 119 rival,Wired proposal; validation pending,Optional rival battles do not alter the cap.

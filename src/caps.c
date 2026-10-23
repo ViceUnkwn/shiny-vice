@@ -18,6 +18,9 @@ u32 GetCurrentLevelCap(void)
         {FLAG_BADGE04_GET, 31},
         {FLAG_BADGE03_GET, 29},
         {FLAG_BADGE02_GET, 24},
+        // The Slateport museum story milestone keeps the main path viable if
+        // the player skips Brawly, whose badge is not required to leave Dewford.
+        {FLAG_DELIVERED_DEVON_GOODS, 24},
         {FLAG_BADGE01_GET, 19},
     };
 

@@ -714,6 +714,15 @@ void SetWarpDestination(s8 mapGroup, s8 mapNum, s8 warpId, s8 x, s8 y)
     SetWarpData(&sWarpDestination, mapGroup, mapNum, warpId, x, y);
 }
 
+void SetWarpDestinationToMapCoords(s8 mapGroup, s8 mapNum, s16 x, s16 y)
+{
+    sWarpDestination.mapGroup = mapGroup;
+    sWarpDestination.mapNum = mapNum;
+    sWarpDestination.warpId = WARP_ID_NONE;
+    sWarpDestination.x = x;
+    sWarpDestination.y = y;
+}
+
 void SetWarpDestinationToMapWarp(s8 mapGroup, s8 mapNum, s8 warpId)
 {
     SetWarpDestination(mapGroup, mapNum, warpId, -1, -1);

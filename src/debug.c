@@ -3,6 +3,7 @@
 #include "battle_setup.h"
 #include "berry.h"
 #include "clock.h"
+#include "constants/maps.h"
 #include "coins.h"
 #include "credits.h"
 #include "credits_frlg.h"
@@ -17,6 +18,7 @@
 #include "field_message_box.h"
 #include "field_screen_effect.h"
 #include "field_weather.h"
+#include "fieldmap.h"
 #include "follower_npc.h"
 #include "international_string_util.h"
 #include "item.h"
@@ -47,6 +49,7 @@
 #include "rtc.h"
 #include "script.h"
 #include "script_pokemon_util.h"
+#include "shiny_vice_settings.h"
 #include "shiny_quality.h"
 #include "sound.h"
 #include "strings.h"
@@ -340,6 +343,13 @@ static void DebugAction_FlagsVars_TrainerSeeOnOff(u8 taskId);
 static void DebugAction_FlagsVars_BagUseOnOff(u8 taskId);
 static void DebugAction_FlagsVars_CatchingOnOff(u8 taskId);
 static void DebugAction_FlagsVars_RunningShoes(u8 taskId);
+static void DebugAction_ShinyVice_Cap15(u8 taskId);
+static void DebugAction_ShinyVice_Cap24(u8 taskId);
+static void DebugAction_ShinyVice_Cap29(u8 taskId);
+static void DebugAction_ShinyVice_SetCapOff(u8 taskId);
+static void DebugAction_ShinyVice_SetCapSoft(u8 taskId);
+static void DebugAction_ShinyVice_SetCapHard(u8 taskId);
+static void DebugAction_ShinyVice_GiveTestItems(u8 taskId);
 
 static void DebugAction_Give_MaxMoney(u8 taskId);
 static void DebugAction_Give_MaxCoins(u8 taskId);
@@ -415,6 +425,7 @@ extern const u8 Debug_BerryWeedsDisabled[];
 extern const u8 Common_EventScript_MoveRelearner[];
 
 static const struct DebugSelection sWarpSelection;
+static const struct DebugSelection sMapCoordinateWarpSelection;
 static const struct DebugSelection sSetWeatherSelection;
 static const struct DebugSelection sShinyOddsSelection;
 static const struct DebugSelection sSpeciesGeneratorSelection;
@@ -724,6 +735,21 @@ static const struct DebugMenuOption sDebugMenu_Actions_Encounters[] =
     { NULL }
 };
 
+// These presets stage a cap milestone and warp to the Leader whose badge
+// unlocks the next cap, so the normal victory script can be tested.
+static const struct DebugMenuOption sDebugMenu_Actions_ShinyViceTests[] =
+{
+    { COMPOUND_STRING("15 -> Roxanne (cap 19)"), DebugAction_ShinyVice_Cap15 },
+    { COMPOUND_STRING("24 -> Wattson (cap 29)"), DebugAction_ShinyVice_Cap24 },
+    { COMPOUND_STRING("29 -> Flannery (cap 31)"), DebugAction_ShinyVice_Cap29 },
+    { COMPOUND_STRING("Set cap mode: OFF"), DebugAction_ShinyVice_SetCapOff },
+    { COMPOUND_STRING("Set cap mode: SOFT"), DebugAction_ShinyVice_SetCapSoft },
+    { COMPOUND_STRING("Set cap mode: HARD"), DebugAction_ShinyVice_SetCapHard },
+    { COMPOUND_STRING("Give test balls and rods"), DebugAction_ShinyVice_GiveTestItems },
+    { COMPOUND_STRING("Warp to map coordinates…"), DebugAction_Selection_Init, &sMapCoordinateWarpSelection },
+    { NULL }
+};
+
 static const struct DebugMenuOption sDebugMenu_Actions_Sound[] =
 {
     { COMPOUND_STRING("SFX…"),   DebugAction_Sound_SE },
@@ -780,6 +806,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Main[] =
     { COMPOUND_STRING("Scripts…"),      DebugAction_OpenSubMenu, sDebugMenu_Actions_Scripts, },
     { COMPOUND_STRING("Trainers…"),     DebugAction_OpenSubMenuTrainers, sDebugMenu_Actions_Trainers, },
     { COMPOUND_STRING("Encounters…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_Encounters, },
+    { COMPOUND_STRING("Shiny Vice Tests…"), DebugAction_OpenSubMenu, sDebugMenu_Actions_ShinyViceTests, },
     { COMPOUND_STRING("Flags & Vars…"), DebugAction_OpenSubMenuFlagsVars, sDebugMenu_Actions_Flags, },
     { COMPOUND_STRING("Sound…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_Sound, },
     { COMPOUND_STRING("ROM Info…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_ROMInfo2, },
@@ -1323,6 +1350,12 @@ static void DebugSelectionStep_ReturnToUtilMenu(u8 taskId)
     DebugAction_OpenSubMenu(taskId, sDebugMenu_Actions_Utilities);
 }
 
+static void DebugSelectionStep_ReturnToShinyViceTestsMenu(u8 taskId)
+{
+    Debug_RemoveCallbackMenu();
+    DebugAction_OpenSubMenu(taskId, sDebugMenu_Actions_ShinyViceTests);
+}
+
 static void DebugSelectionStep_ReturnToOutbreakMenu(u8 taskId)
 {
     Debug_RemoveCallbackMenu();
@@ -1811,6 +1844,52 @@ static bool32 DebugSelection_SetWarp_OnComplete(u8 taskId)
     return TRUE;
 }
 
+static void DebugSelectionStep_UpdateMapCoordinate(u8 taskId, u8 digits, u32 min, u32 max)
+{
+    u32 coordinate = gTasks[taskId].tInput;
+    ConvertIntToDecimalStringN(gStringVar2, coordinate, STR_CONV_MODE_LEADING_ZEROS, digits);
+    ConvertIntToDecimalStringN(gStringVar3, max, STR_CONV_MODE_LEADING_ZEROS, digits);
+    if (gTasks[taskId].tStep == 2)
+        StringExpandPlaceholders(gStringVar1, COMPOUND_STRING("X: {STR_VAR_2} / {STR_VAR_3}"));
+    else
+        StringExpandPlaceholders(gStringVar1, COMPOUND_STRING("Y: {STR_VAR_2} / {STR_VAR_3}"));
+    StringCopy(gStringVar2, COMPOUND_STRING(""));
+    StringCopy(gStringVar3, COMPOUND_STRING(""));
+    DebugNativeStep_PrintWindowSelection(taskId);
+}
+
+static u32 DebugSelectionStep_GetMapCoordinateMax(u8 taskId, bool32 isY)
+{
+    u16 mapGroup = DebugSelection_GetData(taskId, 0);
+    u16 mapNum = DebugSelection_GetData(taskId, 1);
+    const struct MapHeader *mapHeader = Overworld_GetMapHeaderByGroupAndId(mapGroup, mapNum);
+    u32 max = isY ? mapHeader->mapLayout->height - 1 : mapHeader->mapLayout->width - 1;
+
+    return max;
+}
+
+static u32 DebugSelectionStep_GetMapXMax(u8 taskId)
+{
+    return DebugSelectionStep_GetMapCoordinateMax(taskId, FALSE);
+}
+
+static u32 DebugSelectionStep_GetMapYMax(u8 taskId)
+{
+    return DebugSelectionStep_GetMapCoordinateMax(taskId, TRUE);
+}
+
+static bool32 DebugSelection_SetMapCoordinates_OnComplete(u8 taskId)
+{
+    SetWarpDestinationToMapCoords(DebugSelection_GetData(taskId, 0),
+        DebugSelection_GetData(taskId, 1),
+        DebugSelection_GetData(taskId, 2), DebugSelection_GetData(taskId, 3));
+    DoWarp();
+    ResetInitialPlayerAvatarState();
+    DebugAction_DestroyExtraWindow(taskId);
+    ScriptContext_Stop();
+    return TRUE;
+}
+
 static const struct DebugSelectionStep sMapGroupSelectionStep = {
     .stepUpdate = DebugSelectionStep_UpdateMapGroup,
     .stepConfirm = DebugSelectionStep_GenericInputConfirm,
@@ -1837,12 +1916,38 @@ static const struct DebugSelectionStep sWarpSelectionStep = {
     .useMaxFunc = TRUE,
 };
 
+static const struct DebugSelectionStep sMapXSelectionStep = {
+    .stepUpdate = DebugSelectionStep_UpdateMapCoordinate,
+    .stepConfirm = DebugSelectionStep_GenericInputConfirm,
+    .minValue = 0,
+    .maxFunc = DebugSelectionStep_GetMapXMax,
+    .digits = 3,
+    .useMaxFunc = TRUE,
+};
+
+static const struct DebugSelectionStep sMapYSelectionStep = {
+    .stepUpdate = DebugSelectionStep_UpdateMapCoordinate,
+    .stepConfirm = DebugSelectionStep_GenericInputConfirm,
+    .minValue = 0,
+    .maxFunc = DebugSelectionStep_GetMapYMax,
+    .digits = 3,
+    .useMaxFunc = TRUE,
+};
+
 static const struct DebugSelection sWarpSelection = {
     .onInit = Debug_CreateInputDisplayWindow,
     .onCancel = DebugSelectionStep_ReturnToUtilMenu,
     .onComplete = DebugSelection_SetWarp_OnComplete,
     .steps = {&sMapGroupSelectionStep, &sMapNumSelectionStep, &sWarpSelectionStep},
     .maxSteps = 3,
+};
+
+static const struct DebugSelection sMapCoordinateWarpSelection = {
+    .onInit = Debug_CreateInputDisplayWindow,
+    .onCancel = DebugSelectionStep_ReturnToShinyViceTestsMenu,
+    .onComplete = DebugSelection_SetMapCoordinates_OnComplete,
+    .steps = {&sMapGroupSelectionStep, &sMapNumSelectionStep, &sMapXSelectionStep, &sMapYSelectionStep},
+    .maxSteps = 4,
 };
 
 void CheckSaveBlock1Size(struct ScriptContext *ctx)
@@ -3083,6 +3188,88 @@ static void DebugAction_FlagsVars_ToggleBadgeFlags(u8 taskId)
         for (u32 i = 0; i < ARRAY_COUNT(gBadgeFlags); i++)
             FlagSet(gBadgeFlags[i]);
     }
+}
+
+static void DebugAction_ShinyVice_ClearCapFlags(void)
+{
+    for (u32 i = 0; i < ARRAY_COUNT(gBadgeFlags); i++)
+        FlagClear(gBadgeFlags[i]);
+    FlagClear(FLAG_DELIVERED_DEVON_GOODS);
+    FlagClear(FLAG_IS_CHAMPION);
+}
+
+static void DebugAction_ShinyVice_SetCapMode(u8 capMode)
+{
+    struct ShinyViceSettings settings = *ShinyViceSettings_Get();
+    settings.version = SV_SETTINGS_VERSION;
+    settings.levelCap = capMode;
+    gSaveBlock3Ptr->svSettings = settings;
+}
+
+static void DebugAction_ShinyVice_SetCapOff(u8 taskId)
+{
+    DebugAction_ShinyVice_SetCapMode(SV_LEVEL_CAP_OFF);
+}
+
+static void DebugAction_ShinyVice_SetCapSoft(u8 taskId)
+{
+    DebugAction_ShinyVice_SetCapMode(SV_LEVEL_CAP_SOFT);
+}
+
+static void DebugAction_ShinyVice_SetCapHard(u8 taskId)
+{
+    DebugAction_ShinyVice_SetCapMode(SV_LEVEL_CAP_HARD);
+}
+
+static void DebugAction_ShinyVice_GiveTestItems(u8 taskId)
+{
+    AddBagItem(ITEM_POKE_BALL, 50);
+    AddBagItem(ITEM_OLD_ROD, 1);
+    AddBagItem(ITEM_GOOD_ROD, 1);
+    AddBagItem(ITEM_SUPER_ROD, 1);
+}
+
+static void DebugAction_ShinyVice_WarpToBoss(u8 taskId, u16 map, s16 x, s16 y)
+{
+    SetWarpDestinationToMapCoords(MAP_GROUP(map), MAP_NUM(map), x + MAP_OFFSET, y + MAP_OFFSET);
+    Debug_DestroyMenu_Full(taskId);
+    DoWarp();
+    ResetInitialPlayerAvatarState();
+    ScriptContext_Stop();
+}
+
+static void DebugAction_ShinyVice_ResetBoss(u16 trainerId, u16 gymDefeatedFlag)
+{
+    FlagClear(gymDefeatedFlag);
+    FlagClear(TRAINER_FLAGS_START + trainerId);
+}
+
+static void DebugAction_ShinyVice_Cap15(u8 taskId)
+{
+    DebugAction_ShinyVice_ClearCapFlags();
+    DebugAction_ShinyVice_ResetBoss(TRAINER_ROXANNE_1, FLAG_DEFEATED_RUSTBORO_GYM);
+    DebugAction_ShinyVice_WarpToBoss(taskId, MAP_RUSTBORO_CITY_GYM, 5, 3);
+}
+
+static void DebugAction_ShinyVice_Cap24(u8 taskId)
+{
+    DebugAction_ShinyVice_ClearCapFlags();
+    FlagSet(FLAG_DELIVERED_DEVON_GOODS);
+    FlagSet(FLAG_BADGE01_GET);
+    FlagSet(FLAG_BADGE02_GET);
+    FlagClear(FLAG_HIDE_MAUVILLE_GYM_WATTSON);
+    DebugAction_ShinyVice_ResetBoss(TRAINER_WATTSON_1, FLAG_DEFEATED_MAUVILLE_GYM);
+    DebugAction_ShinyVice_WarpToBoss(taskId, MAP_MAUVILLE_CITY_GYM, 5, 3);
+}
+
+static void DebugAction_ShinyVice_Cap29(u8 taskId)
+{
+    DebugAction_ShinyVice_ClearCapFlags();
+    FlagSet(FLAG_BADGE01_GET);
+    FlagSet(FLAG_BADGE02_GET);
+    FlagSet(FLAG_BADGE03_GET);
+    DebugAction_ShinyVice_ResetBoss(TRAINER_FLANNERY_1, FLAG_DEFEATED_LAVARIDGE_GYM);
+    DebugAction_ShinyVice_WarpToBoss(taskId, MAP_LAVARIDGE_TOWN_GYM_1F, 13, 10);
 }
 
 static void DebugAction_FlagsVars_ToggleGameClear(u8 taskId)
