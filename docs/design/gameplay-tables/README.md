@@ -1,6 +1,12 @@
 # Gameplay planning tables
 
-Design inventories and phase plans. The first New Game slice now wires starter-set selection, Birch's starter previews/gifts, and the Hoenn rival's same-pool counter-pick in source. Acquisition placements, Normal boss teams, and cap milestones remain planning proposals.
+Design inventories and phase plans. The Lv15 opening slice has live encounter, trainer-party, AI, rival, and Roxanne content. The badge-1 stabilization plan is the current comparison and lock checklist; map reachability, starter fairness, and play-through balance remain open.
+
+- hoenn-campaign-progression.md: route-by-route Emerald story, battle and unlock order, known encounter pass status, optional method gates, and a staged plan for finishing encounter coverage and trainer progression.
+- first-badge-content-plan.md: source-backed Lv15 scope before Roxanne, Imperium comparison, full reachable trainer ledger, encounter-method boundary, and ordered completion plan.
+- badge-1-opening-chunk-draft.md: Normal-mode route-by-route Lv15 design draft, current encounter pools, vanilla comparison, trainer ledger, recovery plan, and lock criteria.
+- badge-1-trainer-balance-pass.md: current Normal route/Gym trainer teams, movesets, and AI profile, with remaining access and play-through checks.
+- badge-1-stabilization-plan.md: current first-badge snapshot, vanilla/Imperium/Radical Red comparison, stale-note reconciliation, and lock criteria before moving to the next badge band.
 
 - Starters and rival: starter-set/slot model, Birch's three-ball bag flow, exact shiny-preview-to-gift identity, Hoenn rival counter-pick rule, and configured rival inventory. The starter-set choice does not change the Hoenn region or story.
 - `starter-region-pools.csv`: canonical, code-ordered mapping for all 27 player starters and their rival counter-picks.
@@ -23,7 +29,7 @@ Design inventories and phase plans. The first New Game slice now wires starter-s
 - `normal-cap-milestones.csv`: badge-led Normal cap progression with a Lv24 story milestone from `FLAG_DELIVERED_DEVON_GOODS`, which covers the Brawly bypass before Route 110.
 - `wild-encounter-inventory.csv`: generated current inventory of every map encounter method in `src/data/wild_encounters.json`, aggregated by enabled family and fishing-rod tier. It refreshes species slots and weights; map/story reachability stays pending until audited.
 - `tools/gameplay_tables/build_wild_encounter_inventory.py`: regenerates that inventory and checks every method/rod-tier weight vector totals 100% while mapping every source encounter species to the enabled-family input.
-- The current encounter JSON contains wild sources for 118 enabled families on Hoenn-region maps and 158 across all map regions. Thus 228 families currently have no wild source on a Hoenn map. Some may already be available by starter, gift, egg, trade, or other scripted event; Kanto/FRLG map rows do not count as Hoenn-campaign access. These are source-coverage counts, not obtainability verdicts; the acquisition ledger must combine source paths with verified map gates.
+- The current encounter JSON contains wild sources for 142 enabled families on Hoenn-region maps and 175 across all map regions. Thus 204 families currently have no wild source on a Hoenn map. Some may already be available by starter, gift, egg, trade, or other scripted event; Kanto/FRLG map rows do not count as Hoenn-campaign access. These are source-coverage counts, not obtainability verdicts; the acquisition ledger must combine source paths with verified map gates.
 - `normal-boss-design-pass.csv`: first-pass Normal party-size/ace targets and design direction for every mandatory boss, rival checkpoint, Elite Four member, and postgame boss. This is a balancing brief, not authored final teams.
 - The opening rows in `normal-boss-checkpoints.csv` distinguish the optional Route 104 and Rustboro rival events (separate flags), include the required Petalburg Woods Aqua fight, and mark Rusturf Tunnel order/cap as unresolved until map blockers are checked.
 - Normal implementation plan: phased development roadmap for the New Game menu, Birch's bag and shiny starters, same-pool Hoenn rival, Normal rules, per-save caps, banded 733-species acquisition, forms/postgame, balance/release checks, and deferred QoL options.
@@ -55,3 +61,10 @@ Design PDFs are reference material, not binding requirements. The concept calls 
 6. Preserve IVs, EVs and breeding depth in this pass; Minimal Grinding remains deferred.
 
 Campaign bands are heuristics based on map names, not acquisition guarantees.
+
+
+
+- roxanne-team-draft.md: Normal four-Pokemon Lv15 Roxanne draft, direct Imperium source comparison, AI/item direction, and encounter implications.
+
+- Roxanne moveset workbench: candidate set input, reference versions, matchup screens, and engine-check workflow.
+- Roxanne engine-backed test cases: `test/battle/roxanne.c`, with run and extension notes in `tools/battle_sim/README.md`.

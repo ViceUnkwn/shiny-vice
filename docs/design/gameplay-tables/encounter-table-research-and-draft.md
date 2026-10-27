@@ -1,6 +1,6 @@
 # Shiny Vice encounter table research and draft
 
-**Status:** Route 101–104 land tables are drafted, and the Route 110/117 land tables now form the next midgame pass in `src/data/wild_encounters.json`. The new levels and family mix are source-validated but not yet playtested; other method tables, Petalburg Woods, campaign-wide acquisition, and boss-team review remain open.
+**Status:** Routes 101–104, Petalburg Woods, Route 116, Route 110, and Route 117 land tables are authored in `src/data/wild_encounters.json`. The first-badge pass cross-references all six opening land tables against vanilla Emerald and Imperium; encounter balance still needs playthrough review. Other method tables, campaign-wide acquisition, and boss-team review remain open.
 
 ## What the enabled roster contains
 
@@ -30,7 +30,7 @@ The slot index is weighted. In the current Shiny Vice land schema the 12 weights
 
 `WE_VANILLA_RANDOM TRUE` in `include/config/wild_encounter.h` means encounters trigger through random steps on encounter tiles. It is not a species randomizer and does not pull from every enabled species. `WE_OW_ENCOUNTERS FALSE` leaves generated overworld encounters off by default. Enabling a species in the National Dex therefore does not create an encounter for it.
 
-Before this draft, the early Shiny Vice land tables were largely vanilla. This pass authors mixed-roster placements on Routes 101–104; Petalburg Woods remains on its existing Hoenn list and still needs its own pass. This is why the custom roster needs a campaign-wide acquisition ledger rather than isolated route additions.
+Before this draft, the early Shiny Vice land tables were largely vanilla. The current passes author mixed-roster placements on Routes 101–104, Petalburg Woods, Route 116, Route 110, and Route 117. The custom roster still needs a campaign-wide acquisition ledger rather than isolated route additions.
 
 ## What Imperium contributes
 
@@ -56,7 +56,7 @@ The public branch and supplied Imperium docs can differ by release. This review 
 
 The existing acquisition inventory is useful but not final availability proof:
 
-- `acquisition-plan.csv` is an older snapshot with 811 wild map/method records and 111 distinct Hoenn-map families. The refreshed generated `wild-encounter-inventory.csv` currently reports 118 distinct Hoenn-map families and 158 across all map regions. It includes unverified story gates, so neither count means “obtainable in the campaign.”
+- `acquisition-plan.csv` is an older snapshot with 811 wild map/method records and 111 distinct Hoenn-map families. The refreshed generated `wild-encounter-inventory.csv` currently reports 142 distinct Hoenn-map families and 175 across all map regions. It includes unverified story gates, so neither count means “obtainable in the campaign.”
 - Script matching found 22 gift/egg/static records across 16 families; NPC conditions, repeatability, and shiny behavior still need verification.
 - The 151/47/24 split is a legacy snapshot from the earlier wild/script audit. Refresh the scripted-acquisition ledger before using it as a current gap count. These figures were design/audit obligations, not evidence that those Pokémon were impossible to obtain.
 
@@ -73,7 +73,7 @@ The Route 110/111/117 availability audit keeps their land and Old Rod pools sepa
 
 The current first-access bands are useful sorting cues, not yet safe map assignments. In particular, “Opening–Roxanne” must be split by actual method access: a species present in a Route 102/103 water table is not obtainable before Surf; a fishing entry is not obtainable before the player has a rod; and an expansion map entry is not a Hoenn story path. This matters for Tentacool, Goldeen, Magikarp, Carvanha, Wailmer, and Corphish among the current early-window candidates. Route 103 is also an optional rival encounter before the Pokédex/Poké Ball handoff, so those wild slots do not expand the pre-fight party.
 
-The 31-family “Opening–Badges 1–3” bucket also spans multiple materially different access windows. Split it into pre-Roxanne, after Roxanne/before Brawly, and later before Wattson. Likewise, a family-level maximum BST can make an early base-form line look overpowered: e.g. Slakoth is an early-stage catch while Slaking is a high-stat final form. Review catchable species, evolution level, move access, and cap together; do not assign rarity solely from the maximum BST of the whole family.
+The 38-family “Opening–Badges 1–3” bucket also spans multiple materially different access windows. Split it into pre-Roxanne, after Roxanne/before Brawly, and later before Wattson. Likewise, a family-level maximum BST can make an early base-form line look overpowered: e.g. Slakoth is an early-stage catch while Slaking is a high-stat final form. Review catchable species, evolution level, move access, and cap together; do not assign rarity solely from the maximum BST of the whole family.
 
 ## Draft campaign layout
 
@@ -95,14 +95,14 @@ Use the existing 12 land slots as weighted positions, not a mandate for 12 diffe
 
 For each row in the eventual authored table, retain: map, method, species/form, level range, slot weight, story gate, repeatability, and source evidence. Add a derived audit view for each family showing first access, later alternate hunt paths, and all required evolution branches. Gifts, eggs, fossils, and quests complement the route tables; they should not be flattened into wild encounter entries.
 
-## First land-table pass: Routes 101–104
+## First land-table pass through Roxanne
 
 The player's supplied story order gives these timing constraints:
 
 - Routes 101–103 can be explored immediately. The Route 103 rival battle occurs before the Pokédex/Poké Ball handoff, so wild-table additions do not put extra Pokémon in the party for that fight.
 - Route 104 opens after the Petalburg City conversation with Norman. Its south and north halves use the same `MAP_ROUTE104` encounter header, so one land table applies to both.
 - Route 102–103 water and fishing rows are deliberately unchanged here. Their map records are not proof of early access: Surf and rod methods unlock later.
-- Route 116 and the new mid-game sequence begin after Rustboro, so they are outside this first slice.
+- Route 116 branches west from Rustboro and is reachable before Roxanne, so its land pool belongs in this opening slice. The Devon Goods/Tunnel sequence remains gated until after the Gym.
 
 The opening tables retain recognizable Hoenn anchors but do not preserve every native species on every adjacent route. Poochyena is concentrated on Routes 101–103 and removed from Route 104; Lotad and Seedot anchor Route 102; Route 103 shifts toward Wingull and its regional additions; Route 104 emphasizes its forest/coastal mix. Per-map encounter trigger rates and early level bands stay unchanged. Duplicate slots control combined rarity using the existing expansion weight vector. Percentages below are conditional on a land encounter triggering.
 
@@ -111,11 +111,12 @@ The opening tables retain recognizable Hoenn anchors but do not preserve every n
 | Route 101 | 2–3 | Poochyena 24%, Wurmple 20%, Pidgey 14%, Zigzagoon 11%, Caterpie 10%, Rattata 10%, Sentret 6%, Weedle 5% | A familiar opening core with distinct low-level bird, rodent, and bug choices; Poochyena no longer crowds out every other species. |
 | Route 102 | 3–4 | Lotad 21%, Seedot 20%, Ralts 14%, Mareep 14%, Hoppip 11%, Zigzagoon 10%, Poochyena 5%, Wurmple 5% | The early meadow/pond route: preserves multiple Hoenn options for Roxanne, adds Electric and Grass/Flying lines, and reduces carry-over species from Route 101. |
 | Route 103 | 2–4 | Wingull 24%, Shinx 24%, Starly 11%, Pawmi 11%, Poochyena 10%, Rookidee 10%, Zigzagoon 10% | A distinct open/coastal mix. Hoppip moves to Routes 102 and 104; the Route 103 rival's starter-only team remains a separate script rule. |
-| Route 104 | 4–5 | Taillow 25%, Wurmple 24%, Marill 15%, Wingull 14%, Fletchling 11%, Hoppip 11% | Forest/coast transition with no Poochyena; retains useful native Water/Flying choices and adds two early-stage lines. Both Route 104 sections share this map table. |
+| Route 104 | 4–5 | Taillow 25%, Wurmple 24%, Marill 15%, Hoppip 11%, Surskit 10%, Teddiursa 10%, Wingull 4%, Fletchling 1% | Bird-line share falls from 50% to 30%. Surskit and Teddiursa are added at low levels; rare Wingull/Fletchling hunts remain. Both Route 104 sections share this map table. |
+| Route 116 | 6–8 | Nincada 20%, Whismur 20%, Budew 10%, Nidoran♀/♂ 20%, Abra 10%, Drowzee 5%, Magby 5%, Skitty 4%, Taillow 4%, Poochyena 1%, Geodude 1% | Replaces the vanilla-equivalent land table; preserves six Emerald species and adopts seven Imperium families, adding five families to the opening acquisition pool. |
 
-The tables are rebalanced in `src/data/wild_encounters.json` for playtesting, not final Normal balance. Ralts has a 14% combined Route 102 share (up from the old 4% slot) so it remains huntable while still sharing that meadow with Lotad, Seedot, Mareep, and Hoppip. The pre-Roxanne Grass/Water pool is meaningful through Lotad, Seedot, Hoppip, and Marill, so review their available moves and the planned Roxanne team together before adding more direct counters.
+The tables are rebalanced in `src/data/wild_encounters.json` for playtesting, not final Normal balance. Ralts has a 14% combined Route 102 share (up from the old 4% slot) so it remains huntable while still sharing that meadow with Lotad, Seedot, Mareep, and Hoppip. Before Roxanne, the catchable Grass/Water options include Lotad, Seedot, Hoppip, Marill, Surskit, and Budew; Geodude is also present as a 1% Route 116 hunt. Review their moves, evolution timing, and the planned Roxanne team together so none becomes a required counter.
 
-Petalburg Woods sits between Route 104 south and north in the supplied progression. It remains a separate table for the next adjacent pass; the current table still has its vanilla Hoenn species. Reviewing Routes 101–104 in isolation should not mark the opening map band complete until the Woods table and its gates are included.
+Petalburg Woods sits between Route 104 south and north in the supplied progression. Its new 12-slot land pool keeps Poochyena, Wurmple and its direct branches, Shroomish, Taillow, and Slakoth while adding Oddish, Paras, Spinarak, and Ledyba as low-frequency or moderate-weight hunts. Poochyena drops from 30% to 20%; the Wurmple family drops from 45% to 40%. All Woods additions use the existing slot-weight model and levels 5–6. The earlier land pass contained 27 families across Routes 101–104 and Petalburg Woods, or 31 with the vanilla Route 116 pool. Route 104 now adds Surskit and Teddiursa; the Route 116 redesign adds Budew, Nidoran, Drowzee, Magby, and Geodude. The first-chunk pool now contains 38 families, plus the selected starter. The Woods still needs emulator playtesting and a final Roxanne access/balance review.
 
 ## Decisions for the next table pass
 

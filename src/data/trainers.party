@@ -231,11 +231,22 @@ Pic: Aqua Grunt M
 Gender: Male
 Music: Aqua
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Poochyena
 Level: 9
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Howl
+- Sand Attack
+- Tackle
+
+Carvanha
+Level: 8
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Aqua Jet
+- Poison Fang
+- Focus Energy
+- Leer
 
 === TRAINER_MARCEL ===
 Name: MARCEL
@@ -2121,13 +2132,23 @@ Class: Lady
 Pic: Lady
 Gender: Female
 Music: Female
-Items: Full Restore
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon @ Nugget
 Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Growl
+- Sand Attack
+
+Marill
+Level: 8
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bubble Beam
+- Rollout
+- Defense Curl
+- Water Gun
 
 === TRAINER_DAPHNE ===
 Name: DAPHNE
@@ -2525,13 +2546,21 @@ Class: Rich Boy
 Pic: Rich Boy
 Gender: Male
 Music: Rich
-Items: Full Restore
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon @ Nugget
 Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Growl
+- Sand Attack
+
+Taillow
+Level: 8
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Peck
+- Focus Energy
 
 === TRAINER_MOLLIE ===
 Name: MOLLIE
@@ -4796,33 +4825,48 @@ Class: Leader
 Pic: Leader Roxanne
 Gender: Female
 Music: Female
-Items: Potion / Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability / Smart Switching / Smart Mon Choices
 
-Geodude
-Level: 12
-IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
-- Tackle
-- Defense Curl
-- Rock Throw
+Geodude @ Hard Stone
+Impish Nature
+Level: 13
+Ability: Sturdy
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 - Rock Tomb
-
-Geodude
-Level: 12
-IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
-- Tackle
+- Bulldoze
 - Defense Curl
-- Rock Throw
-- Rock Tomb
+- Tackle
 
-Nosepass @ Oran Berry
+Aron
+Adamant Nature
+Level: 14
+Ability: Rock Head
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Metal Claw
+- Rock Tomb
+- Roar
+- Harden
+
+Lileep @ Oran Berry
+Bold Nature
+Level: 14
+Ability: Storm Drain
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Rock Tomb
+- Acid
+- Confuse Ray
+- Ingrain
+
+Nosepass @ Berry Juice
+Impish Nature
 Level: 15
+Ability: Sturdy
 IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Rock Throw
+- Thunder Wave
 - Block
 - Harden
-- Tackle
-- Rock Tomb
 
 === TRAINER_BRAWLY_1 ===
 Name: BRAWLY
@@ -5133,11 +5177,23 @@ Pic: School Kid M
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Ralts
-Level: 9
+Level: 11
 IVs: 1 HP / 1 Atk / 1 Def / 1 SpA / 1 SpD / 1 Spe
+- Confusion
+- Hypnosis
+- Disarming Voice
+- Double Team
+
+Drowzee
+Level: 10
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Confusion
+- Hypnosis
+- Disable
+- Pound
 
 === TRAINER_TED ===
 Name: TED
@@ -5252,11 +5308,23 @@ Pic: School Kid F
 Gender: Female
 Music: Girl
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Shroomish
-Level: 9
+Level: 11
 IVs: 1 HP / 1 Atk / 1 Def / 1 SpA / 1 SpD / 1 Spe
+- Leech Seed
+- Stun Spore
+- Absorb
+- Tackle
+
+Budew
+Level: 10
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Stun Spore
+- Absorb
+- Growth
+- Worry Seed
 
 === TRAINER_GEORGIA ===
 Name: GEORGIA
@@ -5949,11 +6017,13 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Poochyena
 Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Howl
 
 === TRAINER_BILLY ===
 Name: BILLY
@@ -5962,15 +6032,21 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon
-Level: 5
-IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
-
-Seedot
 Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Sand Attack
+- Growl
+
+Seedot
+Level: 8
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Astonish
+- Harden
 
 === TRAINER_JOSH ===
 Name: JOSH
@@ -5979,11 +6055,16 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Geodude
-Level: 10
-IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+Geodude @ Hard Stone
+Adamant Nature
+Level: 11
+Ability: Sturdy
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Rollout
+- Defense Curl
+- Rock Polish
 - Tackle
 
 === TRAINER_TOMMY ===
@@ -5993,15 +6074,27 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Aron @ Oran Berry
+Adamant Nature
+Level: 11
+Ability: Sturdy
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Metal Claw
+- Rock Tomb
+- Harden
+- Tackle
 
 Geodude
-Level: 8
-IVs: 13 HP / 13 Atk / 13 Def / 13 SpA / 13 SpD / 13 Spe
-
-Geodude
-Level: 8
-IVs: 14 HP / 14 Atk / 14 Def / 14 SpA / 14 SpD / 14 Spe
+Adamant Nature
+Level: 12
+Ability: Sturdy
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Bulldoze
+- Rollout
+- Defense Curl
+- Tackle
 
 === TRAINER_JOEY ===
 Name: JOEY
@@ -6010,11 +6103,23 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Machop
+Level: 10
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Low Kick
+- Revenge
+- Focus Energy
+- Leer
+
+Makuhita
 Level: 9
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Arm Thrust
+- Sand Attack
+- Focus Energy
+- Tackle
 
 === TRAINER_BEN ===
 Name: BEN
@@ -6215,15 +6320,20 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon
-Level: 4
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Growl
+- Sand Attack
 
 Taillow
-Level: 3
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Peck
+- Focus Energy
 
 === TRAINER_TIMMY ===
 Name: TIMMY
@@ -6329,11 +6439,7 @@ Pic: Fisherman
 Gender: Male
 Music: Hiker
 Double Battle: No
-AI: Check Bad Move
-
-Magikarp
-Level: 5
-IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+AI: Basic Trainer
 
 Magikarp
 Level: 6
@@ -6341,6 +6447,10 @@ IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 
 Magikarp
 Level: 7
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magikarp
+Level: 8
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 
 === TRAINER_CLAUDE ===
@@ -8806,15 +8916,22 @@ Pic: Twins
 Gender: Male
 Music: Twins
 Double Battle: Yes
-AI: Check Bad Move
+AI: Basic Trainer
 
 Seedot
-Level: 6
+Level: 8
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Astonish
+- Harden
 
 Lotad
-Level: 6
+Level: 8
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Water Gun
+- Absorb
+- Growl
+- Astonish
 
 === TRAINER_MIU_AND_YUKI ===
 Name: MIU & YUKI
@@ -9511,7 +9628,7 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Treecko
 Level: 5
@@ -9566,7 +9683,7 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move / Try To Faint / Force Setup First Turn
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Torchic
 Level: 5
@@ -9621,7 +9738,7 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Mudkip
 Level: 5
@@ -9676,7 +9793,7 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Treecko
 Level: 5
@@ -9731,7 +9848,7 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Torchic
 Level: 5
@@ -9786,7 +9903,7 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
 Mudkip
 Level: 5
@@ -10561,15 +10678,27 @@ Pic: Hiker
 Gender: Male
 Music: Hiker
 Double Battle: No
-AI: Check Bad Move
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Geodude
-Level: 8
-IVs: 14 HP / 14 Atk / 14 Def / 14 SpA / 14 SpD / 14 Spe
+Lileep @ Oran Berry
+Bold Nature
+Level: 11
+Ability: Storm Drain
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Acid
+- Confuse Ray
+- Astonish
+- Wrap
 
-Geodude
-Level: 8
-IVs: 15 HP / 15 Atk / 15 Def / 15 SpA / 15 SpD / 15 Spe
+Nosepass
+Bold Nature
+Level: 12
+Ability: Sturdy
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+- Rock Throw
+- Block
+- Harden
+- Tackle
 
 === TRAINER_BRENDEN ===
 Name: BRENDEN
@@ -10852,15 +10981,23 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Lotad
+Lotad @ Oran Berry
+Nature: Modest
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: Rain Dish
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Torchic
+- Mega Drain
+- Water Gun
+- Mist
+- Astonish
+
+Torchic @ Oran Berry
+Nature: Adamant
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_BRENDAN_RUSTBORO_MUDKIP ===
 Name: BRENDAN
@@ -10869,15 +11006,23 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Wingull
+Wingull @ Oran Berry
+Nature: Modest
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: Keen Eye
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Treecko
+- Water Gun
+- Quick Attack
+- Supersonic
+- Growl
+
+Treecko @ Oran Berry
+Nature: Modest
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_PAXTON ===
 Name: PAXTON
@@ -10976,15 +11121,23 @@ Pic: Brendan
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Slugma
+Slugma @ Oran Berry
+Nature: Modest
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: Flame Body
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Mudkip
+- Ember
+- Smog
+- Yawn
+- Rock Throw
+
+Mudkip @ Oran Berry
+Nature: Adamant
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_MAY_RUSTBORO_MUDKIP ===
 Name: MAY
@@ -10993,15 +11146,23 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Check Bad Move / Try To Faint / Force Setup First Turn
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Wingull
+Wingull @ Oran Berry
+Nature: Modest
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: Keen Eye
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Treecko
+- Water Gun
+- Quick Attack
+- Supersonic
+- Growl
+
+Treecko @ Oran Berry
+Nature: Modest
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_MAXIE_MAGMA_HIDEOUT ===
 Name: MAXIE
@@ -11054,15 +11215,21 @@ Pic: Lass
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon
-Level: 4
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Growl
+- Sand Attack
 
 Shroomish
-Level: 4
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Absorb
+- Stun Spore
 
 === TRAINER_HALEY_1 ===
 Name: HALEY
@@ -11071,15 +11238,22 @@ Pic: Lass
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Lotad
-Level: 6
+Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Water Gun
+- Absorb
+- Growl
+- Astonish
 
 Shroomish
-Level: 6
+Level: 8
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Stun Spore
+- Tackle
 
 === TRAINER_JANICE ===
 Name: JANICE
@@ -11088,11 +11262,22 @@ Pic: Lass
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Marill
-Level: 9
+Level: 11
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bubble Beam
+- Charm
+- Rollout
+- Defense Curl
+
+Surskit
+Level: 10
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Water Gun
+- Quick Attack
+- Sweet Scent
 
 === TRAINER_VIVI ===
 Name: VIVI
@@ -11258,15 +11443,21 @@ Pic: Bug Catcher
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Wurmple
-Level: 4
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 Wurmple
-Level: 4
+Level: 5
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 === TRAINER_LYLE ===
 Name: LYLE
@@ -11275,23 +11466,35 @@ Pic: Bug Catcher
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Wurmple
-Level: 3
+Level: 6
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 Wurmple
-Level: 3
+Level: 6
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 Wurmple
-Level: 3
+Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 Wurmple
-Level: 3
+Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Poison Sting
+- String Shot
 
 === TRAINER_JOSE ===
 Name: JOSE
@@ -11300,15 +11503,22 @@ Pic: Bug Catcher
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Wurmple
-Level: 8
+Level: 9
 IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+- Poison Sting
+- String Shot
+- Tackle
 
 Nincada
-Level: 8
+Level: 10
 IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+- False Swipe
+- Scratch
+- Harden
+- Sand Attack
 
 === TRAINER_DOUG ===
 Name: DOUG
@@ -11364,15 +11574,20 @@ Pic: Bug Catcher
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Nincada
-Level: 6
+Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Scratch
+- Harden
+- Sand Attack
 
 Nincada
-Level: 6
+Level: 7
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Harden
+- Sand Attack
 
 === TRAINER_JAMES_2 ===
 Name: JAMES
@@ -11550,11 +11765,23 @@ Pic: Hiker
 Gender: Male
 Music: Hiker
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Geodude
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Rollout
+- Defense Curl
+- Rock Polish
+- Tackle
+
+Roggenrola
+Level: 11
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Stealth Rock
+- Harden
+- Tackle
+- Sand Attack
 
 === TRAINER_ERIC ===
 Name: ERIC
@@ -12942,15 +13169,23 @@ Pic: Rich Boy
 Gender: Male
 Music: Rich
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Zigzagoon @ Nugget
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Covet
+- Sand Attack
+- Tackle
+- Growl
 
 Poochyena
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Howl
+- Sand Attack
+- Tackle
 
 === TRAINER_SARAH ===
 Name: SARAH
@@ -12958,17 +13193,24 @@ Class: Lady
 Pic: Lady
 Gender: Female
 Music: Female
-Items: Full Restore
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Lotad
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Water Gun
+- Absorb
+- Mist
+- Astonish
 
 Zigzagoon @ Nugget
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Covet
+- Sand Attack
+- Tackle
+- Growl
 
 === TRAINER_DARIAN ===
 Name: DARIAN
@@ -12977,7 +13219,7 @@ Pic: Fisherman
 Gender: Male
 Music: Hiker
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Magikarp
 Level: 9
@@ -13861,15 +14103,23 @@ Pic: Hiker
 Gender: Male
 Music: Hiker
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Geodude
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Rollout
+- Defense Curl
+- Rock Polish
+- Tackle
 
 Geodude
-Level: 8
+Level: 11
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Rollout
+- Defense Curl
+- Rock Polish
+- Tackle
 
 === TRAINER_JOHNSON ===
 Name: JOHNSON
@@ -13878,15 +14128,23 @@ Pic: Youngster
 Gender: Male
 Music: Male
 Double Battle: No
-AI: Check Bad Move
+AI: Basic Trainer
 
 Shroomish
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Leech Seed
+- Stun Spore
+- Absorb
+- Tackle
 
 Lotad
-Level: 8
+Level: 10
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Water Gun
+- Absorb
+- Mist
+- Astonish
 
 === TRAINER_MELINA ===
 Name: MELINA
@@ -14130,15 +14388,23 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Lotad
+Lotad @ Oran Berry
+Nature: Modest
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: Rain Dish
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Torchic
+- Mega Drain
+- Water Gun
+- Mist
+- Astonish
+
+Torchic @ Oran Berry
+Nature: Adamant
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_MAY_RUSTBORO_TORCHIC ===
 Name: MAY
@@ -14147,15 +14413,23 @@ Pic: May
 Gender: Female
 Music: Female
 Double Battle: No
-AI: Basic Trainer
+AI: Check Bad Move / Try To Faint / Check Viability
 
-Torkoal
+Torkoal @ Oran Berry
+Nature: Bold
 Level: 13
-IVs: 3 HP / 3 Atk / 3 Def / 3 SpA / 3 SpD / 3 Spe
+Ability: White Smoke
+IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
-Mudkip
+- Ember
+- Smog
+- Rapid Spin
+- Smokescreen
+
+Mudkip @ Oran Berry
+Nature: Adamant
 Level: 15
-IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 
 === TRAINER_ROXANNE_2 ===
 Name: ROXANNE
