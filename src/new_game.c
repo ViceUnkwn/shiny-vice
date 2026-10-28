@@ -235,6 +235,8 @@ void NewGameInitData(void)
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
+    // Must run after InitEventData, which zeroes the flag and var that EnableNationalPokedex sets.
+    EnableNationalPokedex();
     // After ClearSav3 above, so the New Game screen's choices are not wiped.
     ShinyViceSettings_CommitPending();
 }
