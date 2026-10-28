@@ -1721,7 +1721,9 @@ static void Task_ClosePokedex(u8 taskId)
         DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldWithOpenMenu);
         m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, 0x100);
-        Free(sPokedexView);
+        // Shiny Vice: must be NULLed. Task_ExitCaughtMonPage (the in-battle new-entry page) frees sPokedexView when it is
+        // non-NULL, so a dangling pointer left here double-frees heap memory and corrupts the battle structs.
+        FREE_AND_SET_NULL(sPokedexView);
     }
 }
 
