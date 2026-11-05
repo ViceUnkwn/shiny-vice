@@ -1552,6 +1552,13 @@ bool8 IsStarterInParty(void)
     return FALSE;
 }
 
+// Shiny Vice: the base-stage species of the starter the player chose, from the selected region's trio.
+// Scripts buffer its name so NPC text does not hardcode Treecko/Torchic/Mudkip.
+u16 GetChosenStarterSpecies(void)
+{
+    return GetStarterPokemon(VarGet(VAR_STARTER_MON));
+}
+
 bool8 ScriptCheckFreePokemonStorageSpace(void)
 {
     return CheckFreePokemonStorageSpace();

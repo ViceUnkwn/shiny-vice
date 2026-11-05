@@ -2281,15 +2281,34 @@ static bool8 IsRivalStarterVariant(u16 trainerId)
     return FALSE;
 }
 
+// Every stage of the Treecko, Torchic and Mudkip lines. The Route 110, Route 119 and Lilycove rival
+// parties carry the evolved forms, so matching only the base forms skipped the counter-pick override.
+static bool8 IsHoennStarterLineDexNum(enum NationalDexOrder dexNum)
+{
+    switch (dexNum)
+    {
+    case NATIONAL_DEX_TREECKO:
+    case NATIONAL_DEX_GROVYLE:
+    case NATIONAL_DEX_SCEPTILE:
+    case NATIONAL_DEX_TORCHIC:
+    case NATIONAL_DEX_COMBUSKEN:
+    case NATIONAL_DEX_BLAZIKEN:
+    case NATIONAL_DEX_MUDKIP:
+    case NATIONAL_DEX_MARSHTOMP:
+    case NATIONAL_DEX_SWAMPERT:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
 static u8 FindHoennStarterPartyIndex(const struct TrainerMon *party, u8 partySize)
 {
     u8 i;
 
     for (i = 0; i < partySize; i++)
     {
-        enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(party[i].species);
-
-        if (dexNum == NATIONAL_DEX_TREECKO || dexNum == NATIONAL_DEX_TORCHIC || dexNum == NATIONAL_DEX_MUDKIP)
+        if (IsHoennStarterLineDexNum(SpeciesToNationalPokedexNum(party[i].species)))
             return i;
     }
 
@@ -2358,14 +2377,19 @@ static void CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum)
         {
             u8 playerStarterSlot = VarGet(VAR_STARTER_MON);
             enum Species rivalStarter;
+            enum Species rivalSpecies;
 
             if (playerStarterSlot >= SV_STARTER_COUNT)
                 playerStarterSlot = 0;
             rivalStarter = GetStarterPokemon((playerStarterSlot + 1) % SV_STARTER_COUNT);
-            rivalParty[starterPartyIndex].species = GetStarterSpeciesAtLevel(rivalStarter, rivalParty[starterPartyIndex].lvl);
-            rivalParty[starterPartyIndex].ability = ABILITY_NONE;
-            for (u8 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
-                rivalParty[starterPartyIndex].moves[moveIndex] = MOVE_NONE;
+            rivalSpecies = GetStarterSpeciesAtLevel(rivalStarter, rivalParty[starterPartyIndex].lvl);
+            if (rivalSpecies != rivalParty[starterPartyIndex].species)
+            {
+                rivalParty[starterPartyIndex].species = rivalSpecies;
+                rivalParty[starterPartyIndex].ability = ABILITY_NONE;
+                for (u8 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+                    rivalParty[starterPartyIndex].moves[moveIndex] = MOVE_NONE;
+            }
 
             trainerWithSelectedStarter = *trainer;
             trainerWithSelectedStarter.party = rivalParty;
